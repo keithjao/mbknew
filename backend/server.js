@@ -2,18 +2,31 @@ import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
 import fs from 'node:fs';
+import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
+import { Server as SocketIOServer } from 'socket.io';
 
 const { Pool } = pg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const app  = express();
+const httpServer = createServer(app);
 const PORT = Number(process.env.PORT || 3001);
 const stateMutationRequests = new Map();
 const stateStreamClients = new Set();
+const socketIoAllowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(v => v.trim()).filter(Boolean)
+  : true;
+const io = new SocketIOServer(httpServer, {
+  path: '/socket.io',
+  cors: {
+    origin: socketIoAllowedOrigins,
+    methods: ['GET', 'POST']
+  }
+});
 
 function emitStateMutation(event) {
   const payload = `data: ${JSON.stringify(event)}\n\n`;
@@ -24,6 +37,8 @@ function emitStateMutation(event) {
       stateStreamClients.delete(client);
     }
   });
+
+  io.emit('state:mutation', event);
 }
 
 // ─── Connection ────────────────────────────────────────────────────────────────
@@ -578,7 +593,7 @@ app.use((error, req, res, _next) => {
 
 initDb()
   .then(() => {
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log(`MBK backend running on http://localhost:${PORT}`);
     });
   })

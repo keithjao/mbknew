@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject, firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { io, Socket } from 'socket.io-client';
 import { resolveApiBase } from '../api/api-base';
 
 type StateMutationEvent = {
@@ -19,6 +20,7 @@ export class RemoteStateService {
   private readonly stateEventsSubject = new Subject<StateMutationEvent>();
   readonly stateEvents$: Observable<StateMutationEvent> = this.stateEventsSubject.asObservable();
   private stateStream?: EventSource;
+  private socket?: Socket;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -37,7 +39,7 @@ export class RemoteStateService {
       this.snapshot.set(key, value);
     });
 
-    this.openStateEventStream();
+    this.openRealtimeStateEvents();
   }
 
   hasState(key: string): boolean {
@@ -188,6 +190,40 @@ export class RemoteStateService {
     }
 
     return JSON.parse(JSON.stringify(value)) as T;
+  }
+
+  private openRealtimeStateEvents(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!this.socket) {
+      this.openSocketStateEvents();
+    }
+
+    // Keep SSE as fallback path.
+    this.openStateEventStream();
+  }
+
+  private openSocketStateEvents(): void {
+    try {
+      const socket = io('/', {
+        path: '/socket.io',
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 10000
+      });
+
+      socket.on('state:mutation', payload => {
+        this.stateEventsSubject.next(payload as StateMutationEvent);
+      });
+
+      this.socket = socket;
+    } catch {
+      console.warn('Failed to initialize socket realtime stream. Falling back to SSE only.');
+    }
   }
 
   private openStateEventStream(): void {
