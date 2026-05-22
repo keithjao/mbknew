@@ -2318,7 +2318,7 @@ export class AttendanceStore {
 
   private getStoredAppSession(staff: StaffAccount[]): StaffAppSession {
     try {
-      const stored = this.remoteState.getState<Partial<StaffAppSession> | null>(STORAGE_KEYS.appSession, null);
+      const stored = this.readDeviceLocalSession<Partial<StaffAppSession>>(STORAGE_KEYS.appSession);
       if (!stored) {
         return this.createGuestAppSession();
       }
@@ -2339,7 +2339,7 @@ export class AttendanceStore {
 
   private getStoredAdminSession(staff: StaffAccount[]): HrAdminSession {
     try {
-      const stored = this.remoteState.getState<Partial<HrAdminSession> | null>(STORAGE_KEYS.adminSession, null);
+      const stored = this.readDeviceLocalSession<Partial<HrAdminSession>>(STORAGE_KEYS.adminSession);
       if (!stored) {
         return this.createGuestSession();
       }
@@ -2391,15 +2391,36 @@ export class AttendanceStore {
   }
 
   private persistAppSession(session: StaffAppSession): void {
-    this.remoteState.setState(STORAGE_KEYS.appSession, session);
+    this.writeDeviceLocalSession(STORAGE_KEYS.appSession, session);
   }
 
   private persistAdminSession(session: HrAdminSession): void {
-    this.remoteState.setState(STORAGE_KEYS.adminSession, session);
+    this.writeDeviceLocalSession(STORAGE_KEYS.adminSession, session);
   }
 
   private persistMasterAdminCredentials(credentials: MasterAdminCredentials): void {
     this.remoteState.setState(STORAGE_KEYS.masterAdmin, credentials);
+  }
+
+  private readDeviceLocalSession<T>(key: string): T | null {
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) {
+        return null;
+      }
+
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  private writeDeviceLocalSession<T>(key: string, value: T): void {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // Session persistence is best-effort and should not block auth flow.
+    }
   }
 
   private createId(prefix: string): string {
