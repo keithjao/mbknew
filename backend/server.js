@@ -480,13 +480,18 @@ const frontendDistCandidates = [
   path.resolve(__dirname, '../frontend/dist/mbk-app')
 ];
 
-const frontendDist = frontendDistCandidates.find(candidate => fs.existsSync(candidate));
+const frontendDist = frontendDistCandidates.find(candidate =>
+  fs.existsSync(path.join(candidate, 'index.html'))
+);
 if (frontendDist) {
+  console.log(`Serving frontend from: ${frontendDist}`);
   app.use(express.static(frontendDist));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) { next(); return; }
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
+} else {
+  console.warn('Frontend dist not found. Checked:', frontendDistCandidates);
 }
 
 // ─── Error Handler ────────────────────────────────────────────────────────────
