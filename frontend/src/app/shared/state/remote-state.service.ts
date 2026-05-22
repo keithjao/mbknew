@@ -89,10 +89,15 @@ export class RemoteStateService {
   }
 
   async refreshKey<T>(key: string): Promise<T | undefined> {
-    const endpoint = `${this.apiBase}/${encodeURIComponent(key)}`;
+    const endpoint = `${this.apiBase}/${encodeURIComponent(key)}?t=${Date.now()}`;
 
     const response = await firstValueFrom(
-      this.http.get<{ key: string; value: T }>(endpoint).pipe(
+      this.http.get<{ key: string; value: T }>(endpoint, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache'
+        }
+      }).pipe(
         catchError(error => {
           if (error?.status === 404) {
             this.snapshot.delete(key);

@@ -79,7 +79,7 @@ export interface QueueStats {
 
 const STORAGE_KEY = 'mbk.orders.queue';
 const ORDER_COUNTER_KEY = 'mbk.order.counter';
-const CROSS_DEVICE_SYNC_INTERVAL_MS = 3000;
+const CROSS_DEVICE_SYNC_INTERVAL_MS = 1000;
 
 @Injectable({ providedIn: 'root' })
 export class OrdersStore {
@@ -498,9 +498,27 @@ export class OrdersStore {
   }
 
   private startCrossDeviceSync(): void {
+    void this.syncFromRemote();
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', () => {
+        void this.syncFromRemote();
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          void this.syncFromRemote();
+        }
+      });
+    }
+
     setInterval(() => {
       void this.syncFromRemote();
     }, CROSS_DEVICE_SYNC_INTERVAL_MS);
+  }
+
+  async syncNow(): Promise<void> {
+    await this.syncFromRemote();
   }
 
   private async syncFromRemote(): Promise<void> {

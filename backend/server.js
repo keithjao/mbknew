@@ -12,6 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const app  = express();
 const PORT = Number(process.env.PORT || 3001);
+const stateMutationRequests = new Map();
 
 // ─── Connection ────────────────────────────────────────────────────────────────
 
@@ -302,12 +303,47 @@ async function initDb() {
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
+function enforceStateMutationRateLimit(req, res, next) {
+  if (!['PUT', 'DELETE', 'POST'].includes(req.method)) {
+    next();
+    return;
+  }
+
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const windowMs = 60_000;
+  const maxRequests = 180;
+
+  const bucket = stateMutationRequests.get(ip) || { count: 0, startedAt: now };
+  if (now - bucket.startedAt > windowMs) {
+    bucket.count = 0;
+    bucket.startedAt = now;
+  }
+
+  bucket.count += 1;
+  stateMutationRequests.set(ip, bucket);
+
+  if (bucket.count > maxRequests) {
+    res.status(429).json({ error: 'Too many state updates. Please retry shortly.' });
+    return;
+  }
+
+  next();
+}
+
 app.use(cors({
   origin: process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map(v => v.trim()).filter(Boolean)
     : false // Deny cross-origin requests if CORS_ORIGIN is not explicitly configured
 }));
 app.use(express.json({ limit: '4mb' }));
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+app.use('/api/state', enforceStateMutationRateLimit);
 
 // ─── Health ───────────────────────────────────────────────────────────────────
 
