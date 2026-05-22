@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { AppClockStore } from '../../shared/testing/app-clock.store';
 import { RemoteStateService } from '../../shared/state/remote-state.service';
@@ -91,7 +91,10 @@ export class OrdersStore {
   readonly orderCounter$ = this.orderCounterSubject.asObservable();
   private isSyncInFlight = false;
 
-  constructor(private readonly appClock: AppClockStore) {
+  constructor(
+    private readonly appClock: AppClockStore,
+    private readonly ngZone: NgZone
+  ) {
     this.cleanupOldOrders();
     this.startCrossDeviceSync();
     this.listenToRealtimeStateMutations();
@@ -549,11 +552,15 @@ export class OrdersStore {
       ]);
 
       if (remoteOrders && !this.areOrdersEqual(remoteOrders, this.ordersSubject.value)) {
-        this.ordersSubject.next(remoteOrders);
+        this.ngZone.run(() => {
+          this.ordersSubject.next(remoteOrders);
+        });
       }
 
       if (Number.isFinite(remoteCounter) && remoteCounter !== this.orderCounterSubject.value) {
-        this.orderCounterSubject.next(remoteCounter as number);
+        this.ngZone.run(() => {
+          this.orderCounterSubject.next(remoteCounter as number);
+        });
       }
     } finally {
       this.isSyncInFlight = false;

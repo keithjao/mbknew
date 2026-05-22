@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { InventoryOperationsStore } from '../data/inventory-operations.store';
 import { OrdersStore, Order, OrderItem, PaymentMethod } from '../data/orders.store';
@@ -15,7 +15,7 @@ type QueueSourceFilter = 'all' | OperationType;
   templateUrl: './queue-board.html',
   styleUrls: ['./queue-board.scss']
 })
-export class QueueBoard implements OnDestroy {
+export class QueueBoard implements OnInit, OnDestroy {
   readonly sourceFilters: Array<{ value: QueueSourceFilter; label: string }> = [
     { value: 'all', label: 'All inventories' },
     { value: 'store', label: 'Store' },
@@ -35,6 +35,7 @@ export class QueueBoard implements OnDestroy {
   showOrderDetail = false;
 
   private readonly subscription = new Subscription();
+  private refreshIntervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     public ordersStore: OrdersStore,
@@ -49,7 +50,18 @@ export class QueueBoard implements OnDestroy {
     );
   }
 
+  ngOnInit(): void {
+    void this.ordersStore.syncNow();
+    this.refreshIntervalId = setInterval(() => {
+      void this.ordersStore.syncNow();
+    }, 1200);
+  }
+
   ngOnDestroy(): void {
+    if (this.refreshIntervalId) {
+      clearInterval(this.refreshIntervalId);
+      this.refreshIntervalId = null;
+    }
     this.subscription.unsubscribe();
   }
 
