@@ -88,6 +88,32 @@ export class RemoteStateService {
     );
   }
 
+  async refreshKey<T>(key: string): Promise<T | undefined> {
+    const endpoint = `${this.apiBase}/${encodeURIComponent(key)}`;
+
+    const response = await firstValueFrom(
+      this.http.get<{ key: string; value: T }>(endpoint).pipe(
+        catchError(error => {
+          if (error?.status === 404) {
+            this.snapshot.delete(key);
+            return of(null);
+          }
+
+          console.warn(`Failed to refresh remote state for ${key}.`, error);
+          return of(null);
+        })
+      )
+    );
+
+    if (!response || !Object.prototype.hasOwnProperty.call(response, 'value')) {
+      return undefined;
+    }
+
+    const nextValue = this.cloneValue(response.value);
+    this.snapshot.set(key, nextValue);
+    return nextValue;
+  }
+
   private async persistState<T>(key: string, value: T, removeLegacyKey: boolean): Promise<void> {
     await firstValueFrom(
       this.http.put(`${this.apiBase}/${encodeURIComponent(key)}`, { value }, { responseType: 'text' }).pipe(

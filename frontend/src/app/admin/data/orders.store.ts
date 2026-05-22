@@ -79,6 +79,7 @@ export interface QueueStats {
 
 const STORAGE_KEY = 'mbk.orders.queue';
 const ORDER_COUNTER_KEY = 'mbk.order.counter';
+const CROSS_DEVICE_SYNC_INTERVAL_MS = 3000;
 
 @Injectable({ providedIn: 'root' })
 export class OrdersStore {
@@ -88,9 +89,11 @@ export class OrdersStore {
 
   private readonly orderCounterSubject = new BehaviorSubject<number>(this.loadOrderCounter());
   readonly orderCounter$ = this.orderCounterSubject.asObservable();
+  private isSyncInFlight = false;
 
   constructor(private readonly appClock: AppClockStore) {
     this.cleanupOldOrders();
+    this.startCrossDeviceSync();
   }
 
   createOrder(
@@ -492,5 +495,43 @@ export class OrdersStore {
       this.ordersSubject.next(nextOrders);
       this.persistOrders(nextOrders);
     }
+  }
+
+  private startCrossDeviceSync(): void {
+    setInterval(() => {
+      void this.syncFromRemote();
+    }, CROSS_DEVICE_SYNC_INTERVAL_MS);
+  }
+
+  private async syncFromRemote(): Promise<void> {
+    if (this.isSyncInFlight) {
+      return;
+    }
+
+    this.isSyncInFlight = true;
+    try {
+      const [remoteOrders, remoteCounter] = await Promise.all([
+        this.remoteState.refreshKey<Order[]>(STORAGE_KEY),
+        this.remoteState.refreshKey<number>(ORDER_COUNTER_KEY)
+      ]);
+
+      if (remoteOrders && !this.areOrdersEqual(remoteOrders, this.ordersSubject.value)) {
+        this.ordersSubject.next(remoteOrders);
+      }
+
+      if (Number.isFinite(remoteCounter) && remoteCounter !== this.orderCounterSubject.value) {
+        this.orderCounterSubject.next(remoteCounter as number);
+      }
+    } finally {
+      this.isSyncInFlight = false;
+    }
+  }
+
+  private areOrdersEqual(left: Order[], right: Order[]): boolean {
+    if (left.length !== right.length) {
+      return false;
+    }
+
+    return JSON.stringify(left) === JSON.stringify(right);
   }
 }
