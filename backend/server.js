@@ -13,6 +13,18 @@ const __dirname  = path.dirname(__filename);
 const app  = express();
 const PORT = Number(process.env.PORT || 3001);
 const stateMutationRequests = new Map();
+const stateStreamClients = new Set();
+
+function emitStateMutation(event) {
+  const payload = `data: ${JSON.stringify(event)}\n\n`;
+  stateStreamClients.forEach(client => {
+    try {
+      client.write(payload);
+    } catch {
+      stateStreamClients.delete(client);
+    }
+  });
+}
 
 // ─── Connection ────────────────────────────────────────────────────────────────
 
@@ -371,6 +383,27 @@ app.get('/api/state', async (req, res, next) => {
   }
 });
 
+app.get('/api/state/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Connection', 'keep-alive');
+  if (typeof res.flushHeaders === 'function') {
+    res.flushHeaders();
+  }
+
+  res.write(`event: connected\ndata: ${JSON.stringify({ at: new Date().toISOString() })}\n\n`);
+  stateStreamClients.add(res);
+
+  const keepAlive = setInterval(() => {
+    res.write(':keep-alive\n\n');
+  }, 25_000);
+
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    stateStreamClients.delete(res);
+  });
+});
+
 app.get('/api/state/:key', async (req, res, next) => {
   try {
     const value = await readState(req.params.key);
@@ -391,6 +424,7 @@ app.put('/api/state/:key', async (req, res, next) => {
       return;
     }
     await writeState(req.params.key, req.body.value);
+    emitStateMutation({ type: 'put', key: req.params.key, at: new Date().toISOString() });
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -400,6 +434,7 @@ app.put('/api/state/:key', async (req, res, next) => {
 app.delete('/api/state/:key', async (req, res, next) => {
   try {
     await deleteState(req.params.key);
+    emitStateMutation({ type: 'delete', key: req.params.key, at: new Date().toISOString() });
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -410,6 +445,7 @@ app.post('/api/state/reset', async (req, res, next) => {
   try {
     const { keys = [], prefixes = [] } = req.body || {};
     await resetState(keys, prefixes);
+    emitStateMutation({ type: 'reset', keys, prefixes, at: new Date().toISOString() });
     res.status(204).send();
   } catch (error) {
     next(error);

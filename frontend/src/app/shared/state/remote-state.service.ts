@@ -1,13 +1,24 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom, of } from 'rxjs';
+import { Observable, Subject, firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { resolveApiBase } from '../api/api-base';
+
+type StateMutationEvent = {
+  type: 'put' | 'delete' | 'reset';
+  key?: string;
+  keys?: string[];
+  prefixes?: string[];
+  at: string;
+};
 
 @Injectable({ providedIn: 'root' })
 export class RemoteStateService {
   private readonly apiBase = `${resolveApiBase()}/state`;
   private readonly snapshot = new Map<string, unknown>();
+  private readonly stateEventsSubject = new Subject<StateMutationEvent>();
+  readonly stateEvents$: Observable<StateMutationEvent> = this.stateEventsSubject.asObservable();
+  private stateStream?: EventSource;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -25,6 +36,8 @@ export class RemoteStateService {
     Object.entries(response || {}).forEach(([key, value]) => {
       this.snapshot.set(key, value);
     });
+
+    this.openStateEventStream();
   }
 
   hasState(key: string): boolean {
@@ -175,5 +188,35 @@ export class RemoteStateService {
     }
 
     return JSON.parse(JSON.stringify(value)) as T;
+  }
+
+  private openStateEventStream(): void {
+    if (typeof window === 'undefined' || this.stateStream) {
+      return;
+    }
+
+    const streamUrl = `${this.apiBase}/stream`;
+    const stream = new EventSource(streamUrl);
+
+    stream.onmessage = event => {
+      if (!event.data) {
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(event.data) as StateMutationEvent;
+        this.stateEventsSubject.next(payload);
+      } catch {
+        // Ignore malformed stream events.
+      }
+    };
+
+    stream.onerror = () => {
+      stream.close();
+      this.stateStream = undefined;
+      window.setTimeout(() => this.openStateEventStream(), 2000);
+    };
+
+    this.stateStream = stream;
   }
 }

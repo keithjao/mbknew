@@ -94,6 +94,7 @@ export class OrdersStore {
   constructor(private readonly appClock: AppClockStore) {
     this.cleanupOldOrders();
     this.startCrossDeviceSync();
+    this.listenToRealtimeStateMutations();
   }
 
   createOrder(
@@ -519,6 +520,20 @@ export class OrdersStore {
 
   async syncNow(): Promise<void> {
     await this.syncFromRemote();
+  }
+
+  private listenToRealtimeStateMutations(): void {
+    this.remoteState.stateEvents$.subscribe(event => {
+      const affectsOrders = event.type === 'reset'
+        ? (event.keys?.includes(STORAGE_KEY) ?? false)
+          || (event.keys?.includes(ORDER_COUNTER_KEY) ?? false)
+          || (event.prefixes?.some(prefix => STORAGE_KEY.startsWith(prefix) || ORDER_COUNTER_KEY.startsWith(prefix)) ?? false)
+        : event.key === STORAGE_KEY || event.key === ORDER_COUNTER_KEY;
+
+      if (affectsOrders) {
+        void this.syncFromRemote();
+      }
+    });
   }
 
   private async syncFromRemote(): Promise<void> {
