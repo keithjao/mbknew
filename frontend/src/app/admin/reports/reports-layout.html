@@ -1,0 +1,20 @@
+<section class="reports-shell">
+  <aside class="reports-sidebar">
+    <h1>Reports</h1>
+    <p>Enterprise analytics suite</p>
+
+    <div class="loading" *ngIf="loading">Loading modules...</div>
+
+    <nav *ngIf="!loading">
+      <ul>
+        <li *ngFor="let item of navItems">
+          <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="reports-content">
+    <router-outlet></router-outlet>
+  </main>
+</section>

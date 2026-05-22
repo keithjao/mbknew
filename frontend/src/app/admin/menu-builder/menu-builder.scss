@@ -1,0 +1,240 @@
+.section-copy {
+  margin: 0 0 1.2rem;
+  color: var(--ink-soft);
+}
+
+.import-panel {
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  padding: 0.9rem 1rem;
+  background: rgba(255, 255, 255, 0.82);
+  margin: 0 0 1.2rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.import-panel h2 {
+  margin: 0;
+  font-size: 0.98rem;
+  text-transform: lowercase;
+}
+
+.import-panel p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.import-panel .format-note code {
+  background: rgba(139, 115, 85, 0.08);
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.83rem;
+}
+
+.import-picker {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 420px;
+}
+
+.import-actions {
+  display: flex;
+  align-items: center;
+}
+
+.import-actions .secondary {
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  background: #fff;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.sheet-format-grid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.sheet-format-card {
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  padding: 0.75rem 0.9rem;
+  background: rgba(255, 255, 255, 0.6);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.sheet-format-card strong {
+  font-size: 0.9rem;
+}
+
+.sheet-format-card p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.import-result {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+}
+
+.import-conflicts,
+.import-errors {
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.88rem;
+}
+
+.import-conflicts {
+  background: rgba(200, 140, 30, 0.08);
+  border: 1px solid rgba(200, 140, 30, 0.25);
+}
+
+.import-conflicts strong,
+.import-errors strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.import-errors {
+  background: rgba(180, 50, 50, 0.07);
+  border: 1px solid rgba(180, 50, 50, 0.2);
+}
+
+.import-conflicts ul,
+.import-errors ul {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.2rem;
+  color: var(--ink-soft);
+}
+
+.builder-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.fields {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  text-transform: lowercase;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.95rem;
+}
+
+.category-admin {
+  display: flex;
+  align-items: end;
+  gap: 0.7rem;
+}
+
+.category-admin label {
+  flex: 1;
+}
+
+.ingredients-panel {
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  overflow: auto;
+}
+
+.ingredients-panel h2 {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.7rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+td input[type='number'] {
+  width: 100px;
+}
+
+.example {
+  border-left: 2px solid var(--line);
+  padding-left: 0.8rem;
+}
+
+.example h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+
+.example p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.actions button {
+  border: none;
+  border-radius: 0.4rem;
+  padding: 0.55rem 1rem;
+  background: var(--accent, #2f5d50);
+  color: #fff;
+  cursor: pointer;
+}
+
+.category-admin .secondary {
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  background: #fff;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.actions span {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.table-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 1rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}

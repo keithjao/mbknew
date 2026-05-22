@@ -1,0 +1,23 @@
+<div class="page-container menu-page">
+  <h1>menu</h1>
+  <div class="menu-filters">
+    <button 
+      *ngFor="let f of filters" 
+      (click)="activeFilter = f; filterMenu()" 
+      [class.active]="activeFilter === f">
+      {{ f }}
+    </button>
+  </div>
+  <div class="menu-grid">
+    <div class="menu-tile" *ngFor="let item of pagedMenu">
+      <div class="menu-tile__name">{{ item.name }}</div>
+      <div class="menu-tile__desc">{{ item.description }}</div>
+      <div class="menu-tile__price">¥{{ item.price }}</div>
+    </div>
+  </div>
+  <div class="menu-pagination" *ngIf="totalPages > 1">
+    <button (click)="prevPage()" [disabled]="page === 1">prev</button>
+    <span>page {{ page }} of {{ totalPages }}</span>
+    <button (click)="nextPage()" [disabled]="page === totalPages">next</button>
+  </div>
+</div>

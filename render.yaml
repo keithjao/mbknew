@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: mbk-app
+    runtime: node
+    rootDir: .
+    plan: free
+    healthCheckPath: /api/health
+    buildCommand: |
+      cd frontend && npm ci && npm run build
+      cd ../backend && npm ci
+    startCommand: cd backend && npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mbk-postgres
+          property: connectionString
+      - key: PGSSLMODE
+        value: require
+
+databases:
+  - name: mbk-postgres
+    plan: free
+    databaseName: mbk_app
+    user: mbk_app_user

@@ -1,0 +1,80 @@
+<section class="clock-page page-container">
+  <div class="page-head">
+    <div>
+      <h1>clock in / clock out</h1>
+      <p class="description">Use your signed-in staff session and selfie capture to record shifts against schedules and payroll.</p>
+    </div>
+
+    <a routerLink="/admin/hr">open hr workspace</a>
+  </div>
+
+  <div class="feedback-banner" *ngIf="feedback" [class.success]="feedbackTone === 'success'" [class.error]="feedbackTone === 'error'">
+    {{ feedback }}
+  </div>
+
+  <div class="clock-layout">
+    <div class="camera-panel">
+      <video #videoElement autoplay playsinline muted></video>
+      <canvas #captureCanvas hidden></canvas>
+
+      <div class="camera-actions">
+        <button type="button" (click)="startCamera()" [disabled]="isCameraLive">start camera</button>
+        <button type="button" (click)="stopCamera()" [disabled]="!isCameraLive">stop camera</button>
+        <button type="button" (click)="captureSelfie()" [disabled]="!isCameraLive">capture selfie</button>
+      </div>
+
+      <label class="upload-fallback">
+        upload selfie (fallback)
+        <input type="file" accept="image/*" (change)="onSelfieUpload($event)" />
+      </label>
+    </div>
+
+    <div class="attendance-panel" *ngIf="staffMembers.length > 0; else noStaffAccounts">
+      <p class="description">Attendance is tied to your currently signed-in staff account.</p>
+
+      <div class="staff-card" *ngIf="selectedStaff as staff">
+        <div>
+          <strong>{{ staff.fullName }}</strong>
+          <p>{{ staff.staffCode }} • {{ staff.department }} • {{ staff.assignedLocation }}</p>
+        </div>
+        <span>{{ staff.hourlyRate | currency: 'PHP':'symbol':'1.2-2' }}/hr</span>
+      </div>
+
+      <div class="shift-card" *ngIf="selectedSchedule as schedule">
+        <strong>today's shift</strong>
+        <p>{{ schedule.date | date: 'MMM d, y' }} • {{ schedule.startTime }} - {{ schedule.endTime }} • {{ schedule.location }}</p>
+      </div>
+
+      <div class="shift-card open" *ngIf="selectedOpenShift as openShift">
+        <strong>active session</strong>
+        <p>clocked in at {{ openShift.clockInAt | date: 'shortTime' }} • {{ openShift.status }}</p>
+      </div>
+
+      <div class="selfie-preview" *ngIf="selfieDataUrl">
+        <img [src]="selfieDataUrl" alt="captured selfie" />
+        <button type="button" (click)="clearSelfie()">retake</button>
+      </div>
+
+      <div class="attendance-actions">
+        <button type="button" (click)="clockIn()" [disabled]="!canSubmit">clock in</button>
+        <button type="button" class="secondary" (click)="clockOut()" [disabled]="!canSubmit">clock out</button>
+      </div>
+
+      <div class="recent-panel" *ngIf="recentLogs.length > 0">
+        <strong>recent activity</strong>
+        <div class="recent-log" *ngFor="let log of recentLogs">
+          <span>{{ log.clockInAt | date: 'MMM d, h:mm a' }}</span>
+          <span>{{ log.clockOutAt ? 'completed' : 'open' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noStaffAccounts>
+    <div class="attendance-panel empty-panel">
+      <strong>no staff accounts yet</strong>
+      <p>Create staff records in HR before using clock in / clock out.</p>
+      <a routerLink="/admin/hr">go to hr workspace</a>
+    </div>
+  </ng-template>
+</section>

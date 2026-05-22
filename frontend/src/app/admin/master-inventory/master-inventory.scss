@@ -1,0 +1,153 @@
+@import '../admin-section.scss';
+
+.section-copy {
+	margin: 0 0 1rem;
+	color: var(--ink-soft);
+}
+
+.inventory-controls {
+	display: flex;
+	align-items: center;
+	gap: 0.7rem;
+	margin-bottom: 1.5rem;
+}
+
+.inventory-controls input,
+.inventory-controls select {
+	border: 1px solid var(--line);
+	border-radius: 0.4rem;
+	padding: 0.5rem 0.6rem;
+	background: #fff;
+}
+
+.feedback {
+	margin: -0.6rem 0 1rem;
+	color: var(--ink-soft);
+	font-size: 0.9rem;
+}
+
+.add-btn {
+	background: var(--accent, #2f5d50);
+	color: #fff;
+	border: none;
+	border-radius: 0.4rem;
+	padding: 0.6rem 1.2rem;
+	font-size: 1rem;
+	font-weight: 500;
+	box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+	transition: background 150ms ease;
+	cursor: pointer;
+}
+.add-btn:hover {
+	background: #24463e;
+}
+
+.inventory-table {
+	width: 100%;
+	border-collapse: collapse;
+	background: transparent;
+}
+.inventory-table th, .inventory-table td {
+	padding: 0.9rem 0.7rem;
+	text-align: left;
+	border-bottom: 1px solid #ececec;
+	font-size: 1rem;
+}
+.inventory-table th {
+	color: var(--ink);
+	font-weight: 600;
+	background: #f7f5f2;
+}
+.inventory-table td {
+	color: var(--ink-soft);
+}
+.inventory-table tr:last-child td {
+	border-bottom: none;
+}
+
+.inventory-table td input {
+	width: 88px;
+	border: 1px solid var(--line);
+	border-radius: 0.35rem;
+	padding: 0.35rem 0.45rem;
+}
+
+.inventory-table td select {
+	border: 1px solid var(--line);
+	border-radius: 0.35rem;
+	padding: 0.35rem 0.45rem;
+	background: #fff;
+}
+
+.inventory-table button {
+	background: none;
+	border: none;
+	color: var(--accent, #2f5d50);
+	font-size: 0.98rem;
+	margin-right: 0.7rem;
+	cursor: pointer;
+	padding: 0.2rem 0.5rem;
+	border-radius: 0.3rem;
+	transition: background 120ms ease;
+}
+.inventory-table button:hover {
+	background: #e6f2ef;
+}
+
+.confirm-dialog {
+	position: fixed;
+	inset: 0;
+	background: rgba(18, 16, 12, 0.42);
+	display: grid;
+	place-items: center;
+	padding: 1.2rem;
+	z-index: 25;
+}
+
+.dialog-card {
+	width: min(100%, 430px);
+	background: #fff;
+	border-radius: 0.9rem;
+	padding: 1.1rem;
+	box-shadow: 0 18px 48px rgba(18, 16, 12, 0.18);
+	display: grid;
+	gap: 0.75rem;
+}
+
+.dialog-card h2 {
+	margin: 0;
+	font-size: 1rem;
+	text-transform: lowercase;
+}
+
+.dialog-card p {
+	margin: 0;
+	color: var(--ink-soft);
+	font-size: 0.9rem;
+}
+
+.dialog-card input {
+	border: 1px solid var(--line);
+	border-radius: 0.45rem;
+	padding: 0.55rem 0.65rem;
+	font: inherit;
+}
+
+.dialog-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+}
+
+.dialog-actions button {
+	border: 1px solid var(--line);
+	border-radius: 0.4rem;
+	padding: 0.45rem 0.8rem;
+	background: #fff;
+	cursor: pointer;
+}
+
+.dialog-actions .danger {
+	border-color: rgba(162, 72, 72, 0.28);
+	color: #a24848;
+}

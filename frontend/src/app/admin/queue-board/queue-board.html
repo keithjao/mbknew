@@ -1,0 +1,268 @@
+<section class="queue-board-shell panel-stack">
+  <header class="panel-card queue-hero">
+    <div class="card-head">
+      <div>
+        <p class="eyebrow">Kitchen queue</p>
+        <h1>Order Queue Board</h1>
+        <p class="section-copy">
+          Track each inventory stream independently. Use the tabs to focus on store, pop-up, or event orders.
+        </p>
+      </div>
+
+      <div class="metric-grid queue-stats">
+        <article class="metric-card compact">
+          <span>Queued</span>
+          <strong>{{ queuedOrders.length }}</strong>
+        </article>
+        <article class="metric-card compact">
+          <span>Preparing</span>
+          <strong>{{ preparingOrders.length }}</strong>
+        </article>
+        <article class="metric-card compact">
+          <span>Ready</span>
+          <strong>{{ readyOrders.length }}</strong>
+        </article>
+        <article class="metric-card compact">
+          <span>Archived</span>
+          <strong>{{ resolvedOrders.length }}</strong>
+        </article>
+      </div>
+    </div>
+
+    <div class="queue-toolbar">
+      <div class="tab-strip">
+        <button
+          *ngFor="let filter of sourceFilters"
+          type="button"
+          [class.active]="selectedSourceFilter === filter.value"
+          (click)="setSourceFilter(filter.value)">
+          {{ filter.label }}
+        </button>
+      </div>
+
+      <div class="queue-toolbar-meta">
+        <span class="inventory-status" [class.open]="selectedSourceFilter === 'all'">
+          Showing {{ filteredSourceLabel }}
+        </span>
+        <button class="btn btn-secondary" type="button" (click)="clearResolvedOrders()" [disabled]="resolvedOrders.length === 0">
+          Clear archived ({{ resolvedOrders.length }})
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="queue-grid">
+    <article class="panel-card queue-column queued-column">
+      <div class="column-header">
+        <h2>Queued</h2>
+        <span class="count">{{ queuedOrders.length }} orders</span>
+      </div>
+
+      <div class="orders-list">
+        <div *ngFor="let order of queuedOrders; trackBy: trackByOrderId" class="order-card queued" (click)="viewOrderDetails(order)">
+          <div class="order-header">
+            <span class="order-number">{{ order.orderNumber }}</span>
+            <span class="time-badge">{{ getWaitTime(order) }}</span>
+          </div>
+
+          <div class="order-meta">
+            <span class="guest-summary">{{ getGuestSummary(order) }}</span>
+            <span class="source-chip" *ngIf="order.source">{{ order.source | titlecase }}</span>
+            <span class="source-chip">{{ getOrderPaymentCompactLabel(order) }}</span>
+          </div>
+
+          <div class="order-items">
+            <div *ngFor="let item of order.items; trackBy: trackByItemId" class="item-row">
+              <span class="item-qty">{{ item.quantity }}x</span>
+              <div class="item-copy">
+                <span class="item-name">{{ item.itemName }}</span>
+                <span class="guest-tag">{{ getGuestProgressLabel(order, item) }}</span>
+                <span class="item-notes" *ngIf="item.notes">{{ item.notes }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="order-footer">
+            <button class="btn-action start" type="button" (click)="startPreparing(order); $event.stopPropagation()">Start</button>
+            <button class="btn-action cancel" type="button" (click)="cancelOrder(order); $event.stopPropagation()">Cancel + Restock</button>
+          </div>
+        </div>
+
+        <div *ngIf="queuedOrders.length === 0" class="empty-state">
+          <span>✓ No queued orders</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel-card queue-column preparing-column">
+      <div class="column-header">
+        <h2>Preparing</h2>
+        <span class="count">{{ preparingOrders.length }} orders</span>
+      </div>
+
+      <div class="orders-list">
+        <div *ngFor="let order of preparingOrders; trackBy: trackByOrderId" class="order-card preparing" (click)="viewOrderDetails(order)">
+          <div class="order-header">
+            <span class="order-number">{{ order.orderNumber }}</span>
+            <span class="time-badge">{{ getWaitTime(order) }}</span>
+          </div>
+
+          <div class="order-meta">
+            <span class="guest-summary">{{ getGuestSummary(order) }}</span>
+            <span class="source-chip" *ngIf="order.source">{{ order.source | titlecase }}</span>
+            <span class="source-chip">{{ getOrderPaymentCompactLabel(order) }}</span>
+          </div>
+
+          <div class="order-items">
+            <div *ngFor="let item of order.items; trackBy: trackByItemId" class="item-row">
+              <span class="item-qty">{{ item.quantity }}x</span>
+              <div class="item-copy">
+                <span class="item-name">{{ item.itemName }}</span>
+                <span class="guest-tag">{{ getGuestProgressLabel(order, item) }}</span>
+                <span class="item-notes" *ngIf="item.notes">{{ item.notes }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="order-footer">
+            <button class="btn-action ready" type="button" (click)="markReady(order); $event.stopPropagation()">Ready</button>
+            <button class="btn-action back" type="button" (click)="moveBackToQueued(order); $event.stopPropagation()">Back</button>
+          </div>
+        </div>
+
+        <div *ngIf="preparingOrders.length === 0" class="empty-state">
+          <span>✓ No orders preparing</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel-card queue-column ready-column">
+      <div class="column-header">
+        <h2>Ready</h2>
+        <span class="count">{{ readyOrders.length }} orders</span>
+      </div>
+
+      <div class="orders-list">
+        <div *ngFor="let order of readyOrders; trackBy: trackByOrderId" class="order-card ready" (click)="viewOrderDetails(order)">
+          <div class="order-header">
+            <span class="order-number">{{ order.orderNumber }}</span>
+            <span class="time-badge">{{ getWaitTime(order) }}</span>
+          </div>
+
+          <div class="order-meta">
+            <span class="guest-summary">{{ getGuestSummary(order) }}</span>
+            <span class="source-chip" *ngIf="order.source">{{ order.source | titlecase }}</span>
+            <span class="source-chip">{{ getOrderPaymentCompactLabel(order) }}</span>
+          </div>
+
+          <div class="order-items">
+            <div *ngFor="let item of order.items; trackBy: trackByItemId" class="item-row">
+              <span class="item-qty">{{ item.quantity }}x</span>
+              <div class="item-copy">
+                <span class="item-name">{{ item.itemName }}</span>
+                <span class="guest-tag">{{ getGuestProgressLabel(order, item) }}</span>
+                <span class="item-notes" *ngIf="item.notes">{{ item.notes }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="order-total">
+            <span class="label">Total</span>
+            <span class="amount">₱{{ order.finalAmount.toFixed(2) }}</span>
+          </div>
+
+          <div class="order-footer">
+            <button class="btn-action complete" type="button" (click)="markComplete(order); $event.stopPropagation()">Completed</button>
+          </div>
+        </div>
+
+        <div *ngIf="readyOrders.length === 0" class="empty-state">
+          <span>✓ No ready orders</span>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <section class="panel-card resolved-panel" *ngIf="resolvedOrders.length > 0">
+    <div class="resolved-header">
+      <div>
+        <p class="eyebrow">Archive</p>
+        <h2>Resolved Orders</h2>
+        <p>Completed and cancelled orders stay here until you clear the archive.</p>
+      </div>
+      <span class="resolved-count">{{ resolvedOrders.length }} archived</span>
+    </div>
+
+    <div class="resolved-list">
+      <article *ngFor="let order of resolvedOrders | slice:0:6; trackBy: trackByOrderId" class="resolved-card" [class.cancelled]="order.status === 'cancelled'">
+        <div class="resolved-card-head">
+          <strong>{{ order.orderNumber }}</strong>
+          <span [ngClass]="['badge', getStatusClass(order.status)]">{{ order.status | uppercase }}</span>
+        </div>
+        <p class="resolved-meta">{{ getGuestSummary(order) }}</p>
+        <p class="resolved-meta">{{ order.items.length }} items • {{ getResolvedTimestamp(order) | date: 'short' }}</p>
+      </article>
+    </div>
+  </section>
+
+  <div *ngIf="showOrderDetail && selectedOrder" class="detail-modal" (click)="closeOrderDetail()">
+    <div class="detail-card" (click)="$event.stopPropagation()">
+      <div class="detail-header">
+        <h3>Order {{ selectedOrder.orderNumber }}</h3>
+        <button class="close-btn" type="button" (click)="closeOrderDetail()">✕</button>
+      </div>
+
+      <div class="detail-body">
+        <div class="info-row">
+          <label>Status:</label>
+          <span [ngClass]="['badge', getStatusClass(selectedOrder.status)]">{{ selectedOrder.status | uppercase }}</span>
+        </div>
+
+        <div class="info-row">
+          <label>Created:</label>
+          <span>{{ selectedOrder.createdAt | date: 'short' }}</span>
+        </div>
+
+        <div class="info-row">
+          <label>Wait Time:</label>
+          <span>{{ getWaitTime(selectedOrder) }}</span>
+        </div>
+
+        <div class="info-row" *ngIf="selectedOrder.source">
+          <label>Source:</label>
+          <span class="badge">{{ selectedOrder.source | titlecase }}</span>
+        </div>
+
+        <div class="info-row">
+          <label>Guest Tags:</label>
+          <span>{{ getGuestSummary(selectedOrder) }}</span>
+        </div>
+
+        <div class="info-row">
+          <label>Payment:</label>
+          <span>{{ getOrderPaymentSummary(selectedOrder) }}</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <h4>Items</h4>
+        <div class="detail-items">
+          <div *ngFor="let item of selectedOrder.items" class="detail-item">
+            <div class="item-info">
+              <strong>{{ item.quantity }}x {{ item.itemName }}</strong>
+              <small class="guest-tag">{{ getGuestProgressLabel(selectedOrder, item) }}</small>
+              <small *ngIf="item.notes">Note: {{ item.notes }}</small>
+            </div>
+            <div class="item-price">
+              <span class="price">₱{{ getItemTotal(item.unitPrice, item.quantity, item.discount).toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-footer">
+        <button class="btn btn-secondary" type="button" (click)="closeOrderDetail()">Close</button>
+      </div>
+    </div>
+  </div>
+</section>

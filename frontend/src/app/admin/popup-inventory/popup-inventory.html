@@ -1,0 +1,144 @@
+<section class="admin-section popup-inventory">
+  <div class="section-header">
+    <h1>Pop-up Inventory</h1>
+    <p>Manage daily pop-up event inventory - pull from master, track sales, return remaining items.</p>
+  </div>
+
+  <div *ngIf="feedback" class="feedback-message" [class.success]="feedback.includes('success')">
+    {{ feedback }}
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-nav">
+    <button 
+      (click)="activeTab = 'overview'"
+      class="tab-btn"
+      [class.active]="activeTab === 'overview'">
+      <span class="tab-icon">📊</span>
+      OVERVIEW
+    </button>
+    <button 
+      (click)="activeTab = 'pull'"
+      class="tab-btn"
+      [class.active]="activeTab === 'pull'">
+      <span class="tab-icon">📦</span>
+      PULL
+    </button>
+    <button 
+      (click)="activeTab = 'logs'"
+      class="tab-btn"
+      [class.active]="activeTab === 'logs'">
+      <span class="tab-icon">📋</span>
+      LOGS
+    </button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div *ngIf="activeTab === 'overview'" class="tab-content">
+    <div class="status-card">
+      <h2>Pop-up Status</h2>
+      <div *ngIf="!todaysOperation" class="no-op"><p>❌ No active pop-up today</p></div>
+      <div *ngIf="todaysOperation" class="op-info">
+        <p><strong>Status:</strong> <span class="badge open">OPEN</span></p>
+        <p><strong>Items:</strong> {{ todaysOperation.items.length }}</p>
+        <p><strong>Value:</strong> ₱{{ getOperationValue(todaysOperation) | number:'1.2-2' }}</p>
+        <button class="btn btn-danger" (click)="showCloseConfirm = true" *ngIf="!showCloseConfirm">Close Pop-up</button>
+        <div *ngIf="showCloseConfirm" class="close-confirm">
+          <textarea [(ngModel)]="closeNotes" placeholder="Notes..."></textarea>
+          <button class="btn btn-success" (click)="closeOperation()">Confirm</button>
+          <button class="btn btn-secondary" (click)="showCloseConfirm = false">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="todaysOperation" class="items-card">
+      <h2>Inventory</h2>
+      <div class="items-list">
+        <div *ngFor="let item of pagedOperationItems" class="item-row">
+          <div class="item-info">
+            <p class="name">{{ item.name }}</p>
+            <p class="qty">{{ item.currentQuantity }} {{ item.unit }}</p>
+          </div>
+          <div class="item-deduct">
+            <input type="number" min="1" max="{{ item.currentQuantity }}" #qtyInput placeholder="Qty">
+            <button class="btn-small" (click)="deductItem(item.id, +qtyInput.value); qtyInput.value = ''">-</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-pager" *ngIf="todaysOperation.items.length > pageSize">
+        <button type="button" class="btn btn-secondary" [disabled]="currentInventoryPage === 1" (click)="setCurrentInventoryPage(currentInventoryPage - 1)">previous</button>
+        <span>page {{ currentInventoryPage }} of {{ operationItemsTotalPages }}</span>
+        <button type="button" class="btn btn-secondary" [disabled]="currentInventoryPage === operationItemsTotalPages" (click)="setCurrentInventoryPage(currentInventoryPage + 1)">next</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PULL -->
+  <div *ngIf="activeTab === 'pull'" class="tab-content">
+    <div *ngIf="!todaysOperation" class="card open-op">
+      <h2>Open Pop-up Operation</h2>
+      <div class="form-group">
+        <label>Staff</label>
+        <input type="text" [(ngModel)]="currentUser">
+      </div>
+      <div class="form-group">
+        <label>Notes (optional)</label>
+        <textarea [(ngModel)]="operationNotes" placeholder="Event details..."></textarea>
+      </div>
+      <div class="items-select">
+        <div *ngFor="let item of pagedMasterInventory" class="select-row">
+          <input type="checkbox" [checked]="selectedItems.has(item.id)" (change)="toggleItemSelection(item.id, $any($event.target).checked ? (selectedItems.get(item.id) || 1) : 0)">
+          <span class="name">{{ item.name }}</span>
+          <input type="number" min="0" max="{{ item.quantity }}" class="qty-input" [value]="selectedItems.get(item.id) || ''" placeholder="Qty" (change)="toggleItemSelection(item.id, +$any($event.target).value)">
+        </div>
+      </div>
+      <div class="table-pager" *ngIf="masterInventory.length > pageSize">
+        <button type="button" class="btn btn-secondary" [disabled]="pullInventoryPage === 1" (click)="setPullInventoryPage(pullInventoryPage - 1)">previous</button>
+        <span>page {{ pullInventoryPage }} of {{ masterInventoryTotalPages }}</span>
+        <button type="button" class="btn btn-secondary" [disabled]="pullInventoryPage === masterInventoryTotalPages" (click)="setPullInventoryPage(pullInventoryPage + 1)">next</button>
+      </div>
+      <button class="btn btn-primary" [disabled]="selectedItems.size === 0" (click)="openOperation()">Open Pop-up</button>
+    </div>
+
+    <div *ngIf="todaysOperation" class="card add-items">
+      <h2>Add More Items</h2>
+      <div class="items-select">
+        <div *ngFor="let item of pagedMasterInventory" class="select-row">
+          <input type="checkbox" [checked]="selectedItemsToAdd.has(item.id)" (change)="toggleItemToAdd(item.id, $any($event.target).checked ? (selectedItemsToAdd.get(item.id) || 1) : 0)">
+          <span class="name">{{ item.name }}</span>
+          <span class="available">{{ item.quantity }} in stock</span>
+          <input type="number" min="0" max="{{ item.quantity }}" class="qty-input" [value]="selectedItemsToAdd.get(item.id) || ''" placeholder="Qty" (change)="toggleItemToAdd(item.id, +$any($event.target).value)">
+        </div>
+      </div>
+      <div class="table-pager" *ngIf="masterInventory.length > pageSize">
+        <button type="button" class="btn btn-secondary" [disabled]="pullInventoryPage === 1" (click)="setPullInventoryPage(pullInventoryPage - 1)">previous</button>
+        <span>page {{ pullInventoryPage }} of {{ masterInventoryTotalPages }}</span>
+        <button type="button" class="btn btn-secondary" [disabled]="pullInventoryPage === masterInventoryTotalPages" (click)="setPullInventoryPage(pullInventoryPage + 1)">next</button>
+      </div>
+      <button class="btn btn-primary" [disabled]="selectedItemsToAdd.size === 0" (click)="addMoreItems()">Add Items</button>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div *ngIf="activeTab === 'logs'" class="tab-content">
+    <div class="card logs">
+      <h2>Activity Log</h2>
+      <div *ngIf="auditLogs.length === 0" class="empty">No activity yet</div>
+      <div *ngIf="auditLogs.length > 0" class="log-list">
+        <div *ngFor="let log of pagedAuditLogs" class="log-entry">
+          <span class="action" [class]="'action-' + log.action">{{ log.action }}</span>
+          <span class="item">{{ log.inventoryItemName }}</span>
+          <span class="qty">{{ log.quantity }} {{ log.unit }}</span>
+          <span class="time">{{ log.timestamp | date:'short' }}</span>
+        </div>
+      </div>
+
+      <div class="table-pager" *ngIf="auditLogs.length > pageSize">
+        <button type="button" class="btn btn-secondary" [disabled]="logsPage === 1" (click)="setLogsPage(logsPage - 1)">previous</button>
+        <span>page {{ logsPage }} of {{ auditLogTotalPages }}</span>
+        <button type="button" class="btn btn-secondary" [disabled]="logsPage === auditLogTotalPages" (click)="setLogsPage(logsPage + 1)">next</button>
+      </div>
+    </div>
+  </div>
+</section>

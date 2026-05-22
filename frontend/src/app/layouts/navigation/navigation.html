@@ -1,0 +1,70 @@
+<nav class="navbar">
+  <!-- Header Section with Logos -->
+  <div class="navbar__header">
+    <div class="navbar__logos">
+      <!-- Primary Logo -->
+      <a routerLink="/" class="navbar__logo-primary" title="Home">
+        <span class="logo-icon">🍵</span>
+      </a>
+      <!-- Secondary Logo/Brand Name -->
+      <a routerLink="/" class="navbar__logo-secondary" title="Home">
+        <span class="logo-text">matcha by kamo</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Divider Line -->
+  <div class="navbar__divider"></div>
+
+  <!-- Navigation Section -->
+  <div class="navbar__content">
+    <!-- Left Navigation Items -->
+    <div class="navbar__menu">
+      <ul class="nav-list">
+        <li class="nav-item nav-item--menu">
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            menu <span class="menu-count">({{ liveMenuCount$ | async }})</span>
+          </a>
+          <ul class="dropdown-list menu-dropdown" *ngIf="liveMenuItems$ | async as liveMenuItems">
+            <li class="dropdown-item dropdown-item--empty" *ngIf="liveMenuItems.length === 0">
+              <a routerLink="/">no menu items imported yet</a>
+            </li>
+            <li class="dropdown-item" *ngFor="let itemName of liveMenuItems | slice:0:8">
+              <a routerLink="/">{{ itemName }}</a>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/merchandise" routerLinkActive="active">
+            merchandise
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/rewards" routerLinkActive="active">
+            rewards
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Right Navigation - Account -->
+    <div class="navbar__account">
+      <div class="account-menu">
+        <a class="account-button"
+           routerLink="/account"
+           routerLinkActive="active-account"
+           aria-label="my account">
+          <svg class="account-icon" 
+               viewBox="0 0 24 24" 
+               fill="none" 
+               stroke="currentColor" 
+               stroke-width="1.5">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span class="account-label">{{ customerSession()?.fullName || 'my account' }}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>

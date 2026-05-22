@@ -1,0 +1,219 @@
+<div class="event-checklist-editor">
+  <div class="editor-header">
+    <div class="title-section">
+      <h2>{{ event.name }} - Checklist</h2>
+      <button class="btn-close" (click)="closeEditor()">✕</button>
+    </div>
+
+    <div class="event-quick-info">
+      <span>📍 {{ event.venue }}</span>
+      <span>📅 {{ event.date | date: 'short' }}</span>
+      <span>🕒 {{ event.time }}</span>
+    </div>
+  </div>
+
+  <div class="editor-layout">
+    <!-- Left Sidebar -->
+    <aside class="editor-sidebar">
+      <!-- Progress -->
+      <div class="progress-card">
+        <h4>Progress</h4>
+        <div class="progress-stats">
+          <div class="stat">
+            <div class="stat-number">{{ progress?.packedItems || 0 }}</div>
+            <div class="stat-label">Packed</div>
+          </div>
+          <div class="stat">
+            <div class="stat-number">{{ progress?.remainingItems || 0 }}</div>
+            <div class="stat-label">Remaining</div>
+          </div>
+          <div class="stat">
+            <div class="stat-number">{{ progress?.completionPercentage || 0 }}%</div>
+            <div class="stat-label">Complete</div>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div
+            class="progress-fill"
+            [style.width.%]="progress?.completionPercentage || 0"
+          ></div>
+        </div>
+        <div class="progress-text">
+          {{ progress?.packedItems || 0 }} of {{ progress?.totalItems || 0 }} items packed
+        </div>
+      </div>
+
+      <!-- Categories -->
+      <div class="categories-section">
+        <h4>Categories</h4>
+        <div class="category-list">
+          <button
+            class="category-btn"
+            [class.active]="selectedCategory === 'All'"
+            (click)="selectedCategory = 'All'"
+          >
+            <span class="name">All Items</span>
+            <span class="count">{{ checklist.length }}</span>
+          </button>
+
+          <button
+            *ngFor="let category of categories"
+            class="category-btn"
+            [class.active]="selectedCategory === category"
+            (click)="selectedCategory = category"
+            [disabled]="(categoryCounts.get(category)?.total || 0) === 0"
+          >
+            <span class="color-dot" [style.background-color]="getItemCategoryColor(category)"></span>
+            <span class="name">{{ category }}</span>
+            <span class="count">
+              {{ categoryCounts.get(category)?.packed || 0 }}/{{ categoryCounts.get(category)?.total || 0 }}
+            </span>
+          </button>
+        </div>
+
+        <button
+          *ngIf="selectedCategory !== 'All'"
+          class="btn-mark-category"
+          (click)="markCategoryAsPacked()"
+        >
+          Mark {{ selectedCategory }} Complete
+        </button>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions-section">
+        <button class="btn-secondary btn-full" (click)="downloadChecklist()">
+          📥 Download CSV
+        </button>
+        <button class="btn-secondary btn-full" (click)="printChecklist()">
+          🖨️ Print
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="editor-content">
+      <!-- Controls -->
+      <div class="controls">
+        <div class="search-sort">
+          <div class="search-box">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              placeholder="Search items..."
+              class="input-search"
+            />
+          </div>
+
+          <div class="sort-controls">
+            <select [(ngModel)]="sortBy" class="input-sort">
+              <option value="category">Sort: Category</option>
+              <option value="name">Sort: Name</option>
+              <option value="packed">Sort: Packed Status</option>
+            </select>
+
+            <button class="btn-primary" (click)="addItem()">+ Add Item</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add/Edit Item Form -->
+      <div *ngIf="showItemForm" class="form-section">
+        <h4>{{ editingItemId ? 'Edit' : 'Add' }} Item</h4>
+        <form [formGroup]="itemForm" (ngSubmit)="saveItem()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="item-name">Item Name</label>
+              <input
+                id="item-name"
+                type="text"
+                formControlName="name"
+                placeholder="e.g., Chasen (Whisk)"
+                class="input"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="category">Category</label>
+              <select id="category" formControlName="category" class="input">
+                <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="quantity">Quantity</label>
+              <input
+                id="quantity"
+                type="number"
+                formControlName="quantityNeeded"
+                min="1"
+                class="input"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea
+              id="notes"
+              formControlName="notes"
+              placeholder="Add any notes about this item"
+              class="input textarea"
+              rows="2"
+            ></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" [disabled]="itemForm.invalid">
+              {{ editingItemId ? 'Update' : 'Add' }} Item
+            </button>
+            <button type="button" class="btn-secondary" (click)="cancelItemEdit()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Checklist Items -->
+      <div class="checklist-items">
+        <div *ngIf="filteredChecklist.length === 0" class="empty-items">
+          <p>{{ searchTerm ? 'No items match your search' : 'No items in this category' }}</p>
+        </div>
+
+        <div *ngFor="let item of filteredChecklist; let i = index" class="item-row" [class.packed]="item.packed">
+          <div class="item-checkbox">
+            <input
+              type="checkbox"
+              [checked]="item.packed"
+              (change)="toggleItemPacked(item)"
+              [attr.aria-label]="item.name"
+              class="checkbox"
+            />
+          </div>
+
+          <div class="item-info">
+            <div class="item-header">
+              <h5 [class.strikethrough]="item.packed">{{ item.name }}</h5>
+              <span
+                class="category-badge"
+                [style.background-color]="getItemCategoryColor(item.category)"
+              >
+                {{ item.category }}
+              </span>
+            </div>
+            <div class="item-details">
+              <span class="quantity">
+                <strong>{{ item.quantityNeeded }}</strong>
+                <span class="label">needed</span>
+              </span>
+              <span *ngIf="item.notes" class="notes">{{ item.notes }}</span>
+            </div>
+          </div>
+
+          <div class="item-actions">
+            <button class="btn-sm btn-secondary" (click)="editItem(item)">Edit</button>
+            <button class="btn-sm btn-danger" (click)="deleteItem(item)">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

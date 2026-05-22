@@ -1,0 +1,83 @@
+.rewards-page {
+  h1 {
+    margin-bottom: 0.75rem;
+    color: #1a1a1a;
+    font-size: 1.6rem;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    text-transform: lowercase;
+  }
+
+  .rewards-intro {
+    margin-bottom: 2.25rem;
+    color: #6b665e;
+    font-size: 0.95rem;
+    text-transform: lowercase;
+  }
+
+  .tiers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.8rem;
+
+    @media (max-width: 1024px) {
+      gap: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  .tier {
+    padding: 1.1rem 0.25rem 0.95rem;
+    border-top: 1px solid rgba(26, 26, 26, 0.18);
+    border-bottom: 1px solid rgba(26, 26, 26, 0.11);
+
+    &__header {
+      margin-bottom: 1rem;
+    }
+
+    &__name {
+      margin-bottom: 0.3rem;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      text-transform: lowercase;
+    }
+
+    &__range {
+      margin-bottom: 0.28rem;
+      font-size: 0.84rem;
+      color: #6b665e;
+      text-transform: lowercase;
+      letter-spacing: 0.01em;
+    }
+
+    &__points {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #2f5d50;
+      font-weight: 600;
+      text-transform: lowercase;
+    }
+
+    &__benefits {
+      margin: 0;
+      padding-left: 1rem;
+
+      li {
+        margin-bottom: 0.45rem;
+        color: #4f4a43;
+        font-size: 0.88rem;
+        line-height: 1.5;
+        text-transform: lowercase;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}

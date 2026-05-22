@@ -1,0 +1,848 @@
+<section class="admin-section hr-shell">
+  <div class="hero">
+    <div>
+      <h1>HR Command Center</h1>
+      <p class="section-copy">
+        Manage staff accounts, roles, schedules, payroll periods, and selfie-backed attendance from one workforce hub.
+      </p>
+    </div>
+
+    <a class="btn btn-primary" routerLink="/admin/clock-in-out">Open Clock In/Out</a>
+  </div>
+
+  <div class="feedback-banner" *ngIf="feedback" [class.success]="feedbackTone === 'success'" [class.error]="feedbackTone === 'error'">
+    {{ feedback }}
+  </div>
+
+  <div class="provisioned-credentials" *ngIf="provisionedWorkspaceCredentials as credentials">
+    <div>
+      <strong>new staff workspace credentials</strong>
+      <p>username: {{ credentials.workspaceUsername }}</p>
+      <p>base staff pin (clock in/out): {{ credentials.staffPin }}</p>
+      <p>today's POS pin: {{ credentials.todaysPosPin }}</p>
+      <p>temporary password: {{ credentials.temporaryPassword }}</p>
+    </div>
+    <button type="button" class="btn btn-secondary" (click)="clearProvisionedWorkspaceCredentials()">clear</button>
+  </div>
+
+  <div class="tab-strip">
+    <button
+      type="button"
+      *ngFor="let tab of tabs"
+      [class.active]="selectedTab === tab.id"
+      (click)="selectTab(tab.id)">
+      {{ tab.label }}
+    </button>
+  </div>
+
+  <ng-container [ngSwitch]="selectedTab">
+    <div *ngSwitchCase="'overview'" class="panel-stack">
+      <div class="metric-grid">
+        <article class="metric-card">
+          <span>Total Staff</span>
+          <strong>{{ dashboardSummary.totalStaff }}</strong>
+          <small>{{ dashboardSummary.activeStaff }} active today</small>
+        </article>
+        <article class="metric-card">
+          <span>Open Shifts</span>
+          <strong>{{ dashboardSummary.openShifts }}</strong>
+          <small>{{ dashboardSummary.missingClockOut }} awaiting clock out</small>
+        </article>
+        <article class="metric-card">
+          <span>Scheduled Today</span>
+          <strong>{{ dashboardSummary.scheduledToday }}</strong>
+          <small>{{ dashboardSummary.completedToday }} completed</small>
+        </article>
+        <article class="metric-card">
+          <span>Late Arrivals</span>
+          <strong>{{ dashboardSummary.lateToday }}</strong>
+          <small>tracked against scheduled shift start</small>
+        </article>
+      </div>
+
+      <div class="content-grid two-up">
+        <article class="panel-card">
+          <div class="card-head">
+            <h2>Today's Schedule</h2>
+            <span class="meta-pill">{{ todaySchedules.length }} shift(s)</span>
+          </div>
+
+          <div class="empty-state compact" *ngIf="todaySchedules.length === 0">
+            no shifts scheduled today.
+          </div>
+
+          <div class="list-stack" *ngIf="todaySchedules.length > 0">
+            <div class="list-row" *ngFor="let schedule of todaySchedules; trackBy: trackById">
+              <div>
+                <strong>{{ getStaffName(schedule.staffId) }}</strong>
+                <p>{{ schedule.startTime }} - {{ schedule.endTime }} • {{ schedule.location }}</p>
+              </div>
+              <span class="status-badge" [ngClass]="getBadgeClass(schedule.status)">{{ schedule.status }}</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel-card">
+          <div class="card-head">
+            <h2>Open Attendance Sessions</h2>
+            <span class="meta-pill">{{ openShifts.length }} active</span>
+          </div>
+
+          <div class="empty-state compact" *ngIf="openShifts.length === 0">
+            everyone currently clocked in has already clocked out.
+          </div>
+
+          <div class="list-stack" *ngIf="openShifts.length > 0">
+            <div class="list-row" *ngFor="let log of openShifts; trackBy: trackById">
+              <div>
+                <strong>{{ log.employeeName }}</strong>
+                <p>{{ log.clockInAt | date: 'shortTime' }} • {{ log.role }} • {{ log.location }}</p>
+              </div>
+              <span class="status-badge open">open</span>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="content-grid two-up">
+        <article class="panel-card">
+          <div class="card-head">
+            <h2>Upcoming Payroll Windows</h2>
+            <span class="meta-pill">semi-monthly</span>
+          </div>
+
+          <div class="list-stack">
+            <div class="list-row" *ngFor="let period of payrollPeriods.slice(0, 4); trackBy: trackById">
+              <div>
+                <strong>{{ period.label }}</strong>
+                <p>{{ period.startDate }} to {{ period.endDate }}</p>
+              </div>
+              <span class="meta-pill payout">Pays {{ period.payoutDate | date: 'MMM d' }}</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel-card">
+          <div class="card-head">
+            <h2>Recent Attendance</h2>
+            <span class="meta-pill">latest 12</span>
+          </div>
+
+          <div class="empty-state compact" *ngIf="recentAttendanceLogs.length === 0">
+            no attendance activity yet.
+          </div>
+
+          <div class="list-stack" *ngIf="recentAttendanceLogs.length > 0">
+            <div class="list-row" *ngFor="let log of recentAttendanceLogs; trackBy: trackById">
+              <div>
+                <strong>{{ log.employeeName }}</strong>
+                <p>{{ log.clockInAt | date: 'MMM d, h:mm a' }} • {{ getRenderedHours(log) | number: '1.1-2' }} hrs</p>
+              </div>
+              <span class="status-badge" [ngClass]="getBadgeClass(log.status)">{{ log.status }}</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div *ngSwitchCase="'staff'" class="panel-stack">
+      <div class="content-grid split-grid">
+        <article class="panel-card form-card">
+          <div class="card-head">
+            <h2>{{ editingStaffId ? 'Edit Staff Account' : 'Create Staff Account' }}</h2>
+            <button type="button" class="btn btn-secondary" *ngIf="editingStaffId" (click)="resetStaffForm()">Cancel</button>
+          </div>
+
+          <div class="lock-banner" *ngIf="!canManageStaff">
+            Only authenticated admins can create or edit staff accounts.
+          </div>
+
+          <div class="form-grid two-columns">
+            <label>
+              Full name
+              <input [(ngModel)]="staffForm.fullName" name="staffFullName" type="text" placeholder="Juan Dela Cruz" />
+            </label>
+
+            <label>
+              Workspace username
+              <input [(ngModel)]="staffForm.workspaceUsername" name="staffWorkspaceUsername" type="text" autocomplete="username" placeholder="auto-generate if blank" />
+            </label>
+
+            <label *ngIf="editingStaffId">
+              Staff PIN
+              <input [(ngModel)]="staffForm.pin" name="staffPin" type="password" inputmode="numeric" maxlength="8" placeholder="4+ digits" />
+            </label>
+
+            <label>
+              Temporary workspace password
+              <input [(ngModel)]="staffForm.workspacePassword" name="staffWorkspacePassword" type="password" autocomplete="new-password" placeholder="auto-generate on create, keep blank on edit" />
+            </label>
+
+            <label *ngIf="editingStaffId">
+              Email
+              <input [(ngModel)]="staffForm.email" name="staffEmail" type="email" placeholder="name@mbk.local" />
+            </label>
+
+            <label>
+              Phone
+              <input [(ngModel)]="staffForm.phone" name="staffPhone" type="text" placeholder="09xx xxx xxxx" />
+            </label>
+
+            <label>
+              Role
+              <select [(ngModel)]="staffForm.role" name="staffRole">
+                <option *ngFor="let role of staffRoles" [value]="role">{{ role }}</option>
+              </select>
+            </label>
+
+            <label>
+              Employment type
+              <select [(ngModel)]="staffForm.employmentType" name="staffEmploymentType">
+                <option *ngFor="let type of employmentTypes" [value]="type">{{ type }}</option>
+              </select>
+            </label>
+
+            <label>
+              Hourly rate
+              <input [(ngModel)]="staffForm.hourlyRate" name="staffHourlyRate" type="number" min="0" step="0.01" />
+            </label>
+
+            <label>
+              Monthly drink budget
+              <input [(ngModel)]="staffForm.monthlyDrinkBudget" name="staffMonthlyDrinkBudget" type="number" min="0" step="1" />
+            </label>
+
+            <label>
+              Hire date
+              <input [(ngModel)]="staffForm.hireDate" name="staffHireDate" type="date" />
+            </label>
+
+            <label class="field-span">
+              Notes
+              <textarea [(ngModel)]="staffForm.notes" name="staffNotes" rows="4" placeholder="Emergency reminders, shift constraints, cross-training notes"></textarea>
+            </label>
+          </div>
+
+          <p class="section-copy">For new staff, PIN is auto-generated and shown once below with workspace credentials. Internal workspace access uses username + strong password.</p>
+
+          <div class="lock-banner" *ngIf="!editingStaffId && staffAccounts.length === 0">
+            After a fresh reset, start by creating one admin staff account here so scheduling and operator sign-in can proceed.
+          </div>
+
+          <div class="action-row">
+            <button type="button" class="btn btn-primary" (click)="saveStaffAccount()">
+              {{ editingStaffId ? 'Save changes' : 'Create staff account' }}
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="resetStaffForm()">Reset form</button>
+          </div>
+        </article>
+
+        <article class="panel-card">
+          <div class="card-head">
+            <h2>Team Directory</h2>
+            <span class="meta-pill">{{ staffAccounts.length }} total</span>
+          </div>
+
+          <div class="empty-state compact" *ngIf="staffAccounts.length === 0">
+            create your first staff account to unlock schedules and payroll.
+          </div>
+
+          <div class="table-wrap" *ngIf="staffAccounts.length > 0">
+            <table>
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th>Role</th>
+                  <th>Rate</th>
+                  <th>Drink Budget</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let staff of pagedStaffAccounts; trackBy: trackById">
+                  <td>
+                    <strong>{{ staff.fullName }}</strong>
+                    <div class="subtext">{{ staff.staffCode }} • {{ staff.workspaceUsername }} • {{ staff.employmentType }}</div>
+                    <div class="subtext" *ngIf="canManageStaff">today's POS pin: {{ getTodaysPosPin(staff.id) }}</div>
+                  </td>
+                  <td>{{ staff.role }}</td>
+                  <td>{{ staff.hourlyRate | currency: 'PHP':'symbol':'1.2-2' }}</td>
+                  <td>{{ getStaffBudgetSummary(staff).remaining }} / {{ staff.monthlyDrinkBudget }}</td>
+                  <td>{{ staff.assignedLocation }}</td>
+                  <td>
+                    <span class="status-badge" [ngClass]="staff.active ? 'completed' : 'cancelled'">
+                      {{ staff.active ? 'active' : 'archived' }}
+                    </span>
+                    <div class="subtext" *ngIf="staff.active && staff.requiresPasswordChange">temporary password pending</div>
+                  </td>
+                  <td class="actions-cell">
+                    <button type="button" class="btn btn-secondary" [disabled]="!canManageStaff" (click)="editStaffAccount(staff)">Edit</button>
+                    <button type="button" class="btn" [class.btn-warning]="staff.active" [class.btn-success]="!staff.active" [disabled]="!canArchiveStaff" (click)="toggleStaffActive(staff)">
+                      {{ staff.active ? 'Archive' : 'Activate' }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="table-pager" *ngIf="staffAccounts.length > pageSize">
+              <button type="button" class="btn btn-secondary" [disabled]="staffTablePage === 1" (click)="setStaffTablePage(staffTablePage - 1)">previous</button>
+              <span>page {{ staffTablePage }} of {{ staffTableTotalPages }}</span>
+              <button type="button" class="btn btn-secondary" [disabled]="staffTablePage === staffTableTotalPages" (click)="setStaffTablePage(staffTablePage + 1)">next</button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <article class="panel-card">
+        <div class="card-head">
+          <div>
+            <h2>Drink Budget Activity</h2>
+            <p class="section-copy">Monthly drink budgets are configured here in HR. POS only records wastage against inventory.</p>
+          </div>
+          <span class="meta-pill">{{ openWastageCount }} open wastage charge(s)</span>
+        </div>
+
+        <div class="empty-state compact" *ngIf="recentStaffBudgetUsage.length === 0">
+          no drink budget activity recorded yet.
+        </div>
+
+        <div class="list-stack" *ngIf="recentStaffBudgetUsage.length > 0">
+          <div class="list-row" *ngFor="let entry of recentStaffBudgetUsage; trackBy: trackById">
+            <div>
+              <strong>{{ entry.staffName }}</strong>
+              <p>
+                {{ entry.menuItemName }} • {{ entry.quantity }} drink{{ entry.quantity === 1 ? '' : 's' }}
+                • {{ entry.type === 'staff-drink' ? 'staff drink' : 'wastage charge' }}
+              </p>
+            </div>
+            <span class="meta-pill payout">{{ entry.recordedAt | date: 'MMM d, h:mm a' }}</span>
+          </div>
+        </div>
+      </article>
+
+      <div class="content-grid two-up">
+        <article class="panel-card">
+          <div class="card-head">
+            <h2>Wastage By Staff</h2>
+            <span class="meta-pill">{{ staffWastageSummaries.length }} staff with charges</span>
+          </div>
+
+          <div class="empty-state compact" *ngIf="staffWastageSummaries.length === 0">
+            no staff-linked wastage charges yet.
+          </div>
+
+          <div class="list-stack" *ngIf="staffWastageSummaries.length > 0">
+            <div class="list-row" *ngFor="let summary of staffWastageSummaries; trackBy: trackById">
+              <div>
+                <strong>{{ summary.staffName }}</strong>
+                <p>{{ summary.totalDrinks }} drink{{ summary.totalDrinks === 1 ? '' : 's' }} across {{ summary.totalRecords }} waste record{{ summary.totalRecords === 1 ? '' : 's' }}</p>
+              </div>
+              <span class="meta-pill payout">{{ summary.latestAssignedAt | date: 'MMM d, h:mm a' }}</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel-card">
+          <div class="card-head">
+            <h2>Open Wastage Queue</h2>
+            <span class="meta-pill">{{ openWastageCount }} pending</span>
+          </div>
+
+          <div class="empty-state compact" *ngIf="openWastageRecords.length === 0">
+            no open wastage records.
+          </div>
+
+          <div class="list-stack" *ngIf="openWastageRecords.length > 0">
+            <div class="list-row" *ngFor="let record of openWastageRecords; trackBy: trackById">
+              <div>
+                <strong>{{ record.menuItemName }}</strong>
+                <p>{{ record.quantity }} drink{{ record.quantity === 1 ? '' : 's' }} • {{ record.reason }} • {{ record.recordedByName || 'Unknown' }}</p>
+              </div>
+              <span class="meta-pill">{{ record.recordedAt | date: 'MMM d, h:mm a' }}</span>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <article class="panel-card calendar-panel">
+        <div class="card-head calendar-head">
+          <div>
+            <h2>Planning Calendar</h2>
+            <p class="calendar-copy">Visualize shifts, leave requests, and day-off blocks in one monthly planner.</p>
+          </div>
+
+          <div class="calendar-toolbar">
+            <button type="button" class="btn btn-secondary" (click)="previousCalendarMonth()">Previous</button>
+            <span class="meta-pill payout">{{ calendarMonthLabel }}</span>
+            <button type="button" class="btn btn-secondary" (click)="resetCalendarMonth()">Today</button>
+            <button type="button" class="btn btn-secondary" (click)="nextCalendarMonth()">Next</button>
+          </div>
+        </div>
+
+        <div class="calendar-legend">
+          <span class="legend-item shifts">Shifts</span>
+          <span class="legend-item leave">Leave</span>
+          <span class="legend-item blocks">Blocks</span>
+        </div>
+
+        <div class="calendar-grid calendar-weekdays">
+          <span>Sun</span>
+          <span>Mon</span>
+          <span>Tue</span>
+          <span>Wed</span>
+          <span>Thu</span>
+          <span>Fri</span>
+          <span>Sat</span>
+        </div>
+
+        <div class="calendar-grid calendar-days">
+          <button
+            type="button"
+            class="calendar-day"
+            *ngFor="let day of planningCalendarDays; trackBy: trackByCalendarDay"
+            [class.outside-month]="!day.isCurrentMonth"
+            [class.today]="day.isToday"
+            [class.selected]="selectedCalendarDateKey === day.dateKey"
+            (click)="selectCalendarDate(day)">
+            <div class="calendar-day-head">
+              <span>{{ day.dayNumber }}</span>
+              <small *ngIf="day.schedules.length + day.leaveRequests.length + day.dayOffBlocks.length > 0">
+                {{ day.schedules.length + day.leaveRequests.length + day.dayOffBlocks.length }}
+              </small>
+            </div>
+
+            <div class="calendar-entry shift" *ngFor="let schedule of getVisibleCalendarSchedules(day)">
+              {{ getStaffName(schedule.staffId) }} • {{ schedule.startTime }}
+            </div>
+
+            <div class="calendar-entry leave" *ngFor="let request of getVisibleCalendarLeave(day)">
+              {{ getStaffName(request.staffId) }} • {{ request.leaveType }}
+            </div>
+
+            <div class="calendar-entry block" *ngIf="day.dayOffBlocks.length > 0">
+              {{ day.dayOffBlocks[0].scope === 'all' ? 'Store block' : getStaffName(day.dayOffBlocks[0].staffId || '') }}
+            </div>
+
+            <div class="calendar-overflow" *ngIf="getCalendarOverflowCount(day) > 0">+{{ getCalendarOverflowCount(day) }} more</div>
+          </button>
+        </div>
+
+        <div class="calendar-detail" *ngIf="selectedCalendarDay as selectedDay">
+          <div class="card-head">
+            <h3>{{ selectedDay.dateKey | date: 'EEEE, MMM d, y' }}</h3>
+            <span class="meta-pill">{{ selectedDay.schedules.length }} shifts • {{ selectedDay.leaveRequests.length }} leave • {{ selectedDay.dayOffBlocks.length }} blocks</span>
+          </div>
+
+          <div class="content-grid three-up">
+            <article class="detail-column">
+              <h4>Shifts</h4>
+              <div class="empty-state compact" *ngIf="selectedDay.schedules.length === 0">No shifts scheduled.</div>
+              <div class="list-stack" *ngIf="selectedDay.schedules.length > 0">
+                <div class="list-row" *ngFor="let schedule of selectedDay.schedules; trackBy: trackById">
+                  <div>
+                    <strong>{{ getStaffName(schedule.staffId) }}</strong>
+                    <p>{{ schedule.startTime }} - {{ schedule.endTime }} • {{ schedule.location }}</p>
+                  </div>
+                  <span class="status-badge" [ngClass]="getBadgeClass(schedule.status)">{{ schedule.status }}</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="detail-column">
+              <h4>Leave</h4>
+              <div class="empty-state compact" *ngIf="selectedDay.leaveRequests.length === 0">No leave activity.</div>
+              <div class="list-stack" *ngIf="selectedDay.leaveRequests.length > 0">
+                <div class="list-row" *ngFor="let request of selectedDay.leaveRequests; trackBy: trackById">
+                  <div>
+                    <strong>{{ getStaffName(request.staffId) }}</strong>
+                    <p>{{ request.leaveType }} • {{ request.reason }}</p>
+                  </div>
+                  <span class="status-badge" [ngClass]="getBadgeClass(request.status)">{{ request.status }}</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="detail-column">
+              <h4>Blocks</h4>
+              <div class="empty-state compact" *ngIf="selectedDay.dayOffBlocks.length === 0">No active blocks.</div>
+              <div class="list-stack" *ngIf="selectedDay.dayOffBlocks.length > 0">
+                <div class="list-row" *ngFor="let block of selectedDay.dayOffBlocks; trackBy: trackById">
+                  <div>
+                    <strong>{{ block.scope === 'all' ? 'Store-wide block' : getStaffName(block.staffId || '') }}</strong>
+                    <p>{{ block.reason }}</p>
+                  </div>
+                  <span class="meta-pill">{{ block.scope }}</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div *ngSwitchCase="'leave'" class="panel-stack">
+      <div class="content-grid split-grid">
+        <article class="panel-card form-card">
+          <div class="card-head">
+            <h2>Leave Requests</h2>
+            <span class="meta-pill">{{ pendingLeaveCount }} pending</span>
+          </div>
+
+          <div class="form-grid two-columns">
+            <label class="field-span">
+              Staff member
+              <select [(ngModel)]="leaveForm.staffId" name="leaveStaffId">
+                <option value="" disabled>Select staff</option>
+                <option *ngFor="let staff of staffAccounts" [value]="staff.id">{{ staff.fullName }} • {{ staff.role }}</option>
+              </select>
+            </label>
+
+            <label>
+              Leave type
+              <select [(ngModel)]="leaveForm.leaveType" name="leaveType">
+                <option *ngFor="let type of leaveTypes" [value]="type">{{ type }}</option>
+              </select>
+            </label>
+
+            <label>
+              Start date
+              <input [(ngModel)]="leaveForm.startDate" name="leaveStartDate" type="date" />
+            </label>
+
+            <label>
+              End date
+              <input [(ngModel)]="leaveForm.endDate" name="leaveEndDate" type="date" />
+            </label>
+
+            <label class="field-span">
+              Reason
+              <textarea [(ngModel)]="leaveForm.reason" name="leaveReason" rows="3" placeholder="Why is the staff member unavailable?"></textarea>
+            </label>
+
+            <label class="field-span">
+              Notes
+              <textarea [(ngModel)]="leaveForm.notes" name="leaveNotes" rows="3" placeholder="Optional approval context or handoff notes"></textarea>
+            </label>
+          </div>
+
+          <div class="action-row">
+            <button type="button" class="btn btn-primary" [disabled]="!leaveForm.staffId" (click)="saveLeaveRequest()">Submit leave request</button>
+          </div>
+        </article>
+
+        <article class="panel-card form-card">
+          <div class="card-head">
+            <h2>Day-Off Blocking</h2>
+            <span class="meta-pill">admin only</span>
+          </div>
+
+          <div class="lock-banner" *ngIf="!canManageScheduling">
+            Only authenticated admins can create or remove day-off blocks.
+          </div>
+
+          <div class="form-grid two-columns">
+            <label>
+              Block scope
+              <select [(ngModel)]="dayOffBlockForm.scope" name="blockScope">
+                <option value="all">Store-wide</option>
+                <option value="staff">Single staff</option>
+              </select>
+            </label>
+
+            <label *ngIf="dayOffBlockForm.scope === 'staff'">
+              Staff member
+              <select [(ngModel)]="dayOffBlockForm.staffId" name="blockStaffId">
+                <option value="" disabled>Select staff</option>
+                <option *ngFor="let staff of staffAccounts" [value]="staff.id">{{ staff.fullName }} • {{ staff.role }}</option>
+              </select>
+            </label>
+
+            <label>
+              Start date
+              <input [(ngModel)]="dayOffBlockForm.startDate" name="blockStartDate" type="date" />
+            </label>
+
+            <label>
+              End date
+              <input [(ngModel)]="dayOffBlockForm.endDate" name="blockEndDate" type="date" />
+            </label>
+
+            <label class="field-span">
+              Reason
+              <textarea [(ngModel)]="dayOffBlockForm.reason" name="blockReason" rows="3" placeholder="Holiday, store closure, event blackout, approved day off"></textarea>
+            </label>
+          </div>
+
+          <div class="action-row">
+            <button type="button" class="btn btn-primary" [disabled]="!canManageScheduling" (click)="saveDayOffBlock()">Create block</button>
+          </div>
+        </article>
+      </div>
+
+      <div class="content-grid two-up">
+        <article class="panel-card">
+          <div class="card-head">
+            <h2>Leave Queue</h2>
+            <span class="meta-pill">{{ leaveRequests.length }} total</span>
+          </div>
+
+          <div class="empty-state compact" *ngIf="leaveRequests.length === 0">
+            no leave requests submitted yet.
+          </div>
+
+          <div class="table-wrap" *ngIf="leaveRequests.length > 0">
+            <table>
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th>Type</th>
+                  <th>Dates</th>
+                  <th>Status</th>
+                  <th>Reviewed By</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let request of pagedLeaveRequests; trackBy: trackById">
+                  <td>
+                    <strong>{{ getLeaveStaffName(request.staffId) }}</strong>
+                    <div class="subtext">{{ request.reason }}</div>
+                  </td>
+                  <td>{{ request.leaveType }}</td>
+                  <td>{{ request.startDate | date: 'MMM d, y' }} - {{ request.endDate | date: 'MMM d, y' }}</td>
+                  <td>
+                    <span class="status-badge" [ngClass]="getBadgeClass(request.status)">{{ request.status }}</span>
+                  </td>
+                  <td>{{ getLeaveReviewerName(request.reviewedByStaffId) }}</td>
+                  <td class="actions-cell">
+                    <button type="button" class="btn btn-success" [disabled]="!canManageLeave || request.status !== 'pending'" (click)="reviewLeaveRequest(request, 'approved')">Approve</button>
+                    <button type="button" class="btn btn-danger" [disabled]="!canManageLeave || request.status !== 'pending'" (click)="reviewLeaveRequest(request, 'rejected')">Reject</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="table-pager" *ngIf="leaveRequests.length > pageSize">
+              <button type="button" class="btn btn-secondary" [disabled]="leaveTablePage === 1" (click)="setLeaveTablePage(leaveTablePage - 1)">previous</button>
+              <span>page {{ leaveTablePage }} of {{ leaveTableTotalPages }}</span>
+              <button type="button" class="btn btn-secondary" [disabled]="leaveTablePage === leaveTableTotalPages" (click)="setLeaveTablePage(leaveTablePage + 1)">next</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel-card">
+          <div class="card-head">
+            <h2>Active Day-Off Blocks</h2>
+            <span class="meta-pill">{{ dayOffBlocks.length }} active</span>
+          </div>
+
+          <div class="empty-state compact" *ngIf="dayOffBlocks.length === 0">
+            no active day-off blocks.
+          </div>
+
+          <div class="list-stack" *ngIf="dayOffBlocks.length > 0">
+            <div class="list-row" *ngFor="let block of dayOffBlocks; trackBy: trackById">
+              <div>
+                <strong>{{ block.scope === 'all' ? 'Store-wide block' : getStaffName(block.staffId || '') }}</strong>
+                <p>{{ block.startDate | date: 'MMM d, y' }} - {{ block.endDate | date: 'MMM d, y' }} • {{ block.reason }}</p>
+              </div>
+              <div class="actions-cell">
+                <span class="meta-pill">{{ block.scope }}</span>
+                <button type="button" class="btn btn-danger" [disabled]="!canManageScheduling" (click)="removeDayOffBlock(block)">Remove</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div *ngSwitchCase="'payroll'" class="panel-stack">
+      <div class="content-grid split-grid">
+        <article class="panel-card form-card slim-form">
+          <div class="card-head">
+            <h2>Payroll Policy</h2>
+            <span class="meta-pill payout">15th / 30th cadence</span>
+          </div>
+
+          <div class="form-grid two-columns">
+            <label>
+              Overtime multiplier
+              <input [(ngModel)]="payrollPolicyForm.overtimeMultiplier" name="otMultiplier" type="number" min="1" step="0.05" />
+            </label>
+
+            <label>
+              Standard shift hours
+              <input [(ngModel)]="payrollPolicyForm.standardShiftHours" name="standardShiftHours" type="number" min="1" step="0.5" />
+            </label>
+
+            <label>
+              First payout day
+              <input [(ngModel)]="payrollPolicyForm.paymentDays.firstPayoutDay" name="firstPayoutDay" type="number" min="1" max="31" />
+            </label>
+
+            <label>
+              Second payout day
+              <input [(ngModel)]="payrollPolicyForm.paymentDays.secondPayoutDay" name="secondPayoutDay" type="number" min="1" max="31" />
+            </label>
+
+            <label>
+              February payout day
+              <input [(ngModel)]="payrollPolicyForm.paymentDays.februaryPayoutDay" name="febPayoutDay" type="number" min="1" max="29" />
+            </label>
+
+            <label>
+              Leap-year February payout day
+              <input [(ngModel)]="payrollPolicyForm.paymentDays.leapFebruaryPayoutDay" name="leapFebPayoutDay" type="number" min="1" max="29" />
+            </label>
+          </div>
+
+          <div class="action-row">
+            <button type="button" class="btn btn-primary" [disabled]="!canManagePayroll" (click)="savePayrollPolicy()">Save policy</button>
+          </div>
+        </article>
+
+        <article class="panel-card">
+          <div class="card-head">
+            <h2>Payroll Periods</h2>
+            <div class="payroll-toolbar">
+              <select [ngModel]="selectedPayrollPeriodId" (ngModelChange)="selectPayrollPeriod($event)" name="payrollPeriod">
+                <option *ngFor="let period of payrollPeriods; trackBy: trackById" [value]="period.id">
+                  {{ period.label }} • pays {{ period.payoutDate }}
+                </option>
+              </select>
+              <button type="button" class="btn btn-secondary" [disabled]="!canExportPayroll || !selectedPayrollPeriod" (click)="exportPayrollSummary()">Export CSV</button>
+            </div>
+          </div>
+
+          <div class="lock-banner" *ngIf="!canManagePayroll || !canExportPayroll">
+            Admins are required to change payroll settings and export payroll documents.
+          </div>
+
+          <div class="metric-grid compact-grid">
+            <article class="metric-card compact">
+              <span>Gross payroll</span>
+              <strong>{{ totalPayrollGross | currency: 'PHP':'symbol':'1.2-2' }}</strong>
+            </article>
+            <article class="metric-card compact">
+              <span>Rendered hours</span>
+              <strong>{{ totalRenderedHours | number: '1.1-2' }}</strong>
+            </article>
+            <article class="metric-card compact">
+              <span>Scheduled hours</span>
+              <strong>{{ totalScheduledHours | number: '1.1-2' }}</strong>
+            </article>
+          </div>
+
+          <div class="period-summary" *ngIf="selectedPayrollPeriod as period">
+            <strong>{{ period.label }}</strong>
+            <p>{{ period.startDate }} to {{ period.endDate }} • payout on {{ period.payoutDate | date: 'MMM d, y' }}</p>
+          </div>
+
+          <div class="empty-state compact" *ngIf="payrollSummaries.length === 0">
+            payroll will populate after staff members clock in and out.
+          </div>
+
+          <div class="table-wrap" *ngIf="payrollSummaries.length > 0">
+            <table>
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th>Rate</th>
+                  <th>Hours</th>
+                  <th>Late</th>
+                  <th>Gross</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let summary of pagedPayrollSummaries; trackBy: trackById">
+                  <td>
+                    <strong>{{ summary.fullName }}</strong>
+                    <div class="subtext">{{ summary.role }} • {{ summary.department }}</div>
+                  </td>
+                  <td>{{ summary.hourlyRate | currency: 'PHP':'symbol':'1.2-2' }}</td>
+                  <td>
+                    <strong>{{ summary.renderedHours | number: '1.1-2' }}</strong>
+                    <div class="subtext">regular {{ summary.regularHours | number: '1.1-2' }} • OT {{ summary.overtimeHours | number: '1.1-2' }}</div>
+                  </td>
+                  <td>{{ summary.lateMinutes }} min</td>
+                  <td>{{ summary.grossPay | currency: 'PHP':'symbol':'1.2-2' }}</td>
+                  <td class="actions-cell">
+                    <button type="button" class="btn btn-secondary" [disabled]="!canExportPayroll" (click)="generatePayslip(summary)">Payslip</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="table-pager" *ngIf="payrollSummaries.length > pageSize">
+              <button type="button" class="btn btn-secondary" [disabled]="payrollTablePage === 1" (click)="setPayrollTablePage(payrollTablePage - 1)">previous</button>
+              <span>page {{ payrollTablePage }} of {{ payrollTableTotalPages }}</span>
+              <button type="button" class="btn btn-secondary" [disabled]="payrollTablePage === payrollTableTotalPages" (click)="setPayrollTablePage(payrollTablePage + 1)">next</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div *ngSwitchCase="'attendance'" class="panel-stack">
+      <article class="panel-card">
+        <div class="card-head">
+          <h2>Attendance Ledger</h2>
+          <a routerLink="/admin/clock-in-out">Go to Clock In/Out</a>
+        </div>
+
+        <div class="empty-state compact" *ngIf="attendanceLogs.length === 0">
+          no attendance logs yet.
+        </div>
+
+        <div class="table-wrap" *ngIf="attendanceLogs.length > 0">
+          <table>
+            <thead>
+              <tr>
+                <th>Staff</th>
+                <th>Clock In</th>
+                <th>Clock Out</th>
+                <th>Hours</th>
+                <th>Late</th>
+                <th>Status</th>
+                <th>In Selfie</th>
+                <th>Out Selfie</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let log of pagedAttendanceLogs; trackBy: trackById">
+                <td>
+                  <strong>{{ log.employeeName }}</strong>
+                  <div class="subtext">{{ log.role }} • {{ log.location }}</div>
+                </td>
+                <td>{{ log.clockInAt | date: 'medium' }}</td>
+                <td>{{ log.clockOutAt ? (log.clockOutAt | date: 'medium') : 'Open shift' }}</td>
+                <td>{{ getRenderedHours(log) | number: '1.1-2' }}</td>
+                <td>{{ log.lateMinutes }} min</td>
+                <td>
+                  <span class="status-badge" [ngClass]="getBadgeClass(log.status)">{{ log.status }}</span>
+                </td>
+                <td>
+                  <img [src]="log.clockInSelfie" alt="clock in selfie" />
+                </td>
+                <td>
+                  <img *ngIf="log.clockOutSelfie" [src]="log.clockOutSelfie" alt="clock out selfie" />
+                  <span *ngIf="!log.clockOutSelfie">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="table-pager" *ngIf="attendanceLogs.length > pageSize">
+            <button type="button" class="btn btn-secondary" [disabled]="attendanceTablePage === 1" (click)="setAttendanceTablePage(attendanceTablePage - 1)">previous</button>
+            <span>page {{ attendanceTablePage }} of {{ attendanceTableTotalPages }}</span>
+            <button type="button" class="btn btn-secondary" [disabled]="attendanceTablePage === attendanceTableTotalPages" (click)="setAttendanceTablePage(attendanceTablePage + 1)">next</button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </ng-container>
+</section>

@@ -1,0 +1,53 @@
+<div class="admin-layout" [class.sidebar-open]="isSidebarOpen">
+  <div class="admin-mobile-bar">
+    <button type="button" class="admin-nav-toggle" (click)="toggleSidebar()">
+      {{ isSidebarOpen ? 'close admin menu' : 'open admin menu' }}
+    </button>
+  </div>
+
+  <aside class="admin-sidebar" [class.open]="isSidebarOpen">
+    <div class="account-panel">
+      <strong>{{ hasUnlockedAdmin ? 'Admin Session' : 'Staff Session' }}</strong>
+
+      <ng-container *ngIf="hasInternalAccess; else guestAccessNotice">
+        <div class="account-stack">
+          <div class="session-strip" [class.success]="hasUnlockedAdmin">
+            <span>{{ hasUnlockedAdmin ? 'admin access' : 'staff access' }}</span>
+            <strong>{{ hasSignedInSession ? appSession.actingStaffName : adminSession.actingStaffName }}</strong>
+          </div>
+          <p>{{ hasUnlockedAdmin ? 'full admin tools are available.' : 'tools are limited to the staff features assigned to this account.' }}</p>
+          <button type="button" class="secondary-action" (click)="signOutSession()">
+            {{ hasUnlockedAdmin ? 'Sign out admin' : 'Sign out staff' }}
+          </button>
+        </div>
+      </ng-container>
+
+      <ng-template #guestAccessNotice>
+        <p>sign in from the access page to unlock staff or admin tools.</p>
+        <button type="button" [routerLink]="'/admin/access'">Open access</button>
+      </ng-template>
+    </div>
+
+    <div class="testing-clock-panel" *ngIf="hasUnlockedAdmin">
+      <strong>Testing Clock</strong>
+      <p>{{ testClockLabel }}</p>
+      <input [(ngModel)]="testClockInput" type="datetime-local" />
+      <div class="testing-clock-actions">
+        <button type="button" (click)="applyTestClock()">Apply</button>
+        <button type="button" class="secondary" (click)="resetTestClock()">Reset</button>
+      </div>
+      <span *ngIf="testClockFeedback">{{ testClockFeedback }}</span>
+    </div>
+
+    <nav>
+      <ul>
+        <li *ngFor="let item of visibleNavItems">
+          <button type="button" [routerLink]="item.path" routerLinkActive="active" (click)="closeSidebar()">{{ item.label }}</button>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+  <main class="admin-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

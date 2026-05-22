@@ -1,0 +1,143 @@
+<section class="admin-section">
+  <h1>Menu Builder</h1>
+  <p class="section-copy">Build each menu item using ingredients from master inventory.</p>
+
+  <section class="import-panel">
+    <h2>Import menu + inventory (Excel)</h2>
+    <p>
+      Upload a workbook with two sheets: <strong>Inventory</strong> and <strong>Menu</strong>.
+      The Inventory sheet is processed first so all ingredients exist before menu recipes are linked.
+      Missing categories are auto-created. Ingredients not found in the Inventory sheet are auto-created as placeholders.
+    </p>
+
+    <div class="sheet-format-grid">
+      <div class="sheet-format-card">
+        <strong>Sheet 1 — Inventory</strong>
+        <p>Columns: <code>ingredient name</code>, <code>unit</code>, <code>unit cost</code>, <code>starting quantity</code></p>
+        <p class="format-note">Each ingredient appears once here. All menu items that share the same ingredient reference the same stock entry — no duplicate quantity risk.</p>
+      </div>
+      <div class="sheet-format-card">
+        <strong>Sheet 2 — Menu</strong>
+        <p>Columns: <code>menu item name</code>, <code>category</code>, <code>price</code>, <code>ingredients</code>, <code>notes</code> (optional)</p>
+        <p class="format-note">Ingredient format: <code>name|unit|recipeAmount</code>. Separate multiple with <code>;</code>.<br>Example: <code>matcha powder|grams|3; milk|ml|240; cup|piece|1</code></p>
+      </div>
+    </div>
+
+    <div class="import-actions">
+      <button type="button" class="secondary" [disabled]="importInProgress" (click)="downloadSampleWorkbook()">
+        Download sample Excel format
+      </button>
+    </div>
+
+    <label class="import-picker">
+      <span>Excel file (.xlsx / .xls)</span>
+      <input type="file" accept=".xlsx,.xls" [disabled]="importInProgress" (change)="importMenuWorkbook($event)" />
+    </label>
+
+    <div class="import-result" *ngIf="importSummary">
+      <div class="import-conflicts" *ngIf="importSummary.conflicts.length > 0">
+        <strong>Conflicts ({{ importSummary.conflicts.length }})</strong>
+        <ul>
+          <li *ngFor="let c of importSummary.conflicts">{{ c }}</li>
+        </ul>
+      </div>
+      <div class="import-errors" *ngIf="importSummary.errors.length > 0">
+        <strong>Errors ({{ importSummary.errors.length }})</strong>
+        <ul>
+          <li *ngFor="let e of importSummary.errors">{{ e }}</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <form
+    class="builder-form"
+    #builderForm
+    (submit)="createMenuItem(menuName.value, category.value, price.valueAsNumber, notes.value, builderForm); $event.preventDefault()"
+  >
+    <div class="fields">
+      <label>
+        menu item name
+        <input #menuName type="text" required placeholder="matcha drink" />
+      </label>
+      <label>
+        category
+        <select #category required>
+          <option value="" selected disabled>select category</option>
+          <option *ngFor="let item of categories" [value]="item">{{ item }}</option>
+        </select>
+      </label>
+      <label>
+        price (php)
+        <input #price type="number" min="1" required placeholder="180" />
+      </label>
+    </div>
+
+    <div class="category-admin">
+      <label>
+        add category
+        <input #newCategory type="text" placeholder="new category" />
+      </label>
+      <button type="button" class="secondary" (click)="addCategory(newCategory.value, newCategory)">add category</button>
+    </div>
+
+    <label class="notes-field">
+      notes
+      <textarea #notes rows="2" placeholder="signature drink"></textarea>
+    </label>
+
+    <div class="ingredients-panel">
+      <h2>master inventory mapping</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>use</th>
+            <th>inventory item</th>
+            <th>available</th>
+            <th>recipe amount</th>
+            <th>unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of pagedInventory">
+            <td>
+              <input
+                type="checkbox"
+                [checked]="isSelected(item.id)"
+                (change)="toggleIngredient(item, $any($event.target).checked)"
+              />
+            </td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>
+              <input
+                type="number"
+                min="1"
+                [value]="amountFor(item.id)"
+                [disabled]="!isSelected(item.id)"
+                (input)="updateIngredientAmount(item.id, $any($event.target).valueAsNumber)"
+              />
+            </td>
+            <td>{{ item.unit }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="table-pager" *ngIf="inventory.length > pageSize">
+        <button type="button" class="secondary" [disabled]="ingredientPage === 1" (click)="setIngredientPage(ingredientPage - 1)">previous</button>
+        <span>page {{ ingredientPage }} of {{ ingredientTotalPages }}</span>
+        <button type="button" class="secondary" [disabled]="ingredientPage === ingredientTotalPages" (click)="setIngredientPage(ingredientPage + 1)">next</button>
+      </div>
+    </div>
+
+    <div class="example">
+      <h3>example recipe mapping</h3>
+      <p>matcha drink: 3 grams matcha powder, 5 grams agave, 1 piece cup, 1 piece lid, 1 piece straw.</p>
+    </div>
+
+    <div class="actions">
+      <button type="submit">create menu item</button>
+      <span>{{ feedback }}</span>
+    </div>
+  </form>
+</section>

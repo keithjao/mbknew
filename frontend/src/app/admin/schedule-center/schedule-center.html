@@ -1,0 +1,261 @@
+<section class="schedule-center">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="sc-header">
+    <div>
+      <p class="eyebrow">schedule center</p>
+      <h1>{{ calendarMonthLabel }}</h1>
+      <p class="sc-subtitle">
+        store hours {{ schedulingPolicy.openTime }}–{{ schedulingPolicy.closeTime }} ·
+        min coverage {{ schedulingPolicy.weekdayMinimumCoverage }} weekday / {{ schedulingPolicy.weekendMinimumCoverage }} weekend
+      </p>
+    </div>
+    <div class="sc-controls">
+      <div class="month-nav">
+        <button type="button" (click)="prevMonth()" aria-label="previous month">&#8592;</button>
+        <button type="button" (click)="resetMonth()">today</button>
+        <button type="button" (click)="nextMonth()" aria-label="next month">&#8594;</button>
+      </div>
+      <label class="staff-filter" *ngIf="staffAccounts.length > 0">
+        <select [ngModel]="selectedStaffId" (ngModelChange)="selectStaff($event)">
+          <option value="" *ngIf="hasAdminAccess">all staff</option>
+          <option *ngFor="let staff of staffAccounts" [value]="staff.id">{{ staff.fullName }}</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <!-- ── Feedback ─────────────────────────────────────────────────────────── -->
+  <p *ngIf="feedback" class="sc-feedback" [class.success]="feedbackTone === 'success'" [class.error]="feedbackTone === 'error'">
+    {{ feedback }}
+  </p>
+
+  <!-- ── No staff state ───────────────────────────────────────────────────── -->
+  <div class="sc-empty" *ngIf="staffAccounts.length === 0">
+    <p>no active staff yet — create staff accounts in hr first.</p>
+  </div>
+
+  <!-- ── Calendar ─────────────────────────────────────────────────────────── -->
+  <div class="sc-calendar" *ngIf="staffAccounts.length > 0">
+
+    <!-- Weekday labels -->
+    <div class="cal-week-labels">
+      <span>Sun</span>
+      <span>Mon</span>
+      <span>Tue</span>
+      <span>Wed</span>
+      <span>Thu</span>
+      <span>Fri</span>
+      <span>Sat</span>
+    </div>
+
+    <!-- Day cells -->
+    <div class="cal-grid">
+      <button
+        type="button"
+        class="cal-day"
+        *ngFor="let day of calendarDays; trackBy: trackByDateKey"
+        [class.outside]="!day.isCurrentMonth"
+        [class.today]="day.isToday"
+        [class.selected]="selectedDateKey === day.dateKey"
+        (click)="selectDate(day)">
+        <span class="cal-num">{{ day.dayNumber }}</span>
+        <span class="cal-chip --shift" *ngIf="day.shifts.length > 0">{{ day.shifts.length }}s</span>
+        <span class="cal-chip --leave" *ngIf="day.leave.length > 0">{{ day.leave.length }}l</span>
+        <span class="cal-chip --avail" *ngIf="day.availability.length > 0">{{ day.availability.length }}a</span>
+      </button>
+    </div>
+
+    <!-- Legend -->
+    <div class="cal-legend">
+      <span class="legend-item --shift">shifts</span>
+      <span class="legend-item --leave">leave</span>
+      <span class="legend-item --avail">availability</span>
+    </div>
+
+    <!-- ── Date Detail Panel ──────────────────────────────────────────────── -->
+    <div class="sc-detail" *ngIf="selectedDay as day">
+
+      <div class="detail-header">
+        <div>
+          <strong class="detail-date">{{ selectedDateKey | date: 'EEEE, MMMM d, y' }}</strong>
+          <p class="detail-meta">
+            {{ day.shifts.length }} shift{{ day.shifts.length !== 1 ? 's' : '' }} ·
+            {{ day.leave.length }} leave ·
+            {{ day.availability.length }} availability
+          </p>
+        </div>
+        <div class="detail-actions">
+          <button type="button" [class.active]="detailPanel === 'leave'" (click)="openPanel('leave')">file leave</button>
+          <button type="button" [class.active]="detailPanel === 'availability'" (click)="openPanel('availability')">set availability</button>
+          <button type="button" *ngIf="hasAdminAccess" [class.active]="detailPanel === 'shift'" (click)="openPanel('shift')">add shift</button>
+          <button type="button" class="close-btn" *ngIf="detailPanel" (click)="closePanel()">&#x2715;</button>
+        </div>
+      </div>
+
+      <!-- Leave form -->
+      <div class="detail-form" *ngIf="detailPanel === 'leave'">
+        <div class="lock-banner" *ngIf="!canSubmitLeave">
+          sign in as a staff member or admin to file leave.
+        </div>
+        <ng-container *ngIf="canSubmitLeave">
+          <div class="form-row">
+            <label>
+              <span>type</span>
+              <select [(ngModel)]="leaveForm.leaveType" name="leaveType">
+                <option value="vacation">vacation</option>
+                <option value="sick">sick leave</option>
+              </select>
+            </label>
+            <label *ngIf="hasAdminAccess">
+              <span>staff member</span>
+              <select [(ngModel)]="leaveFormStaffId" name="leaveStaff">
+                <option value="" disabled>select staff</option>
+                <option *ngFor="let staff of staffAccounts" [value]="staff.id">{{ staff.fullName }}</option>
+              </select>
+            </label>
+            <label>
+              <span>start date</span>
+              <input [(ngModel)]="leaveForm.startDate" type="date" name="leaveStart" />
+            </label>
+            <label>
+              <span>end date</span>
+              <input [(ngModel)]="leaveForm.endDate" type="date" name="leaveEnd" />
+            </label>
+            <label class="grow">
+              <span>reason</span>
+              <input [(ngModel)]="leaveForm.reason" type="text" name="leaveReason" placeholder="brief reason" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="action-btn --primary" (click)="saveLeaveRequest()">submit leave</button>
+            <button type="button" class="action-btn --ghost" (click)="closePanel()">cancel</button>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Availability form -->
+      <div class="detail-form" *ngIf="detailPanel === 'availability'">
+        <div class="lock-banner" *ngIf="!canEditAvailability">
+          full-time staff availability is managed by admin. sign in as part-time staff or use an admin session.
+        </div>
+        <ng-container *ngIf="canEditAvailability">
+          <div class="template-chips">
+            <button type="button" (click)="applyAvailabilityTemplate('opening-half')">opening half</button>
+            <button type="button" (click)="applyAvailabilityTemplate('closing-half')">closing half</button>
+            <button type="button" (click)="applyAvailabilityTemplate('full-day')">full day</button>
+          </div>
+          <div class="form-row">
+            <label *ngIf="hasAdminAccess">
+              <span>staff member</span>
+              <select [(ngModel)]="availabilityForm.staffId" name="availStaff">
+                <option value="" disabled>select staff</option>
+                <option *ngFor="let staff of staffAccounts" [value]="staff.id">{{ staff.fullName }}</option>
+              </select>
+            </label>
+            <label>
+              <span>start</span>
+              <input [(ngModel)]="availabilityForm.startTime" type="time" step="1800" name="availStart" />
+            </label>
+            <label>
+              <span>end</span>
+              <input [(ngModel)]="availabilityForm.endTime" type="time" step="1800" name="availEnd" />
+            </label>
+            <label class="grow">
+              <span>notes</span>
+              <input [(ngModel)]="availabilityForm.notes" type="text" name="availNotes" placeholder="preferred station, constraints…" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="action-btn --primary" (click)="saveAvailability()">save availability</button>
+            <button type="button" class="action-btn --ghost" (click)="closePanel()">cancel</button>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Shift form (admin only) -->
+      <div class="detail-form" *ngIf="detailPanel === 'shift' && hasAdminAccess">
+        <div class="form-row">
+          <label>
+            <span>staff member</span>
+            <select [(ngModel)]="scheduleForm.staffId" name="shiftStaff">
+              <option value="" disabled>select staff</option>
+              <option *ngFor="let staff of staffAccounts" [value]="staff.id">{{ staff.fullName }} · {{ staff.role }}</option>
+            </select>
+          </label>
+          <label>
+            <span>start</span>
+            <input [(ngModel)]="scheduleForm.startTime" type="time" name="shiftStart" />
+          </label>
+          <label>
+            <span>end</span>
+            <input [(ngModel)]="scheduleForm.endTime" type="time" name="shiftEnd" />
+          </label>
+          <label>
+            <span>location</span>
+            <select [(ngModel)]="scheduleForm.location" name="shiftLocation">
+              <option *ngFor="let loc of shiftLocations" [value]="loc">{{ loc }}</option>
+            </select>
+          </label>
+          <label>
+            <span>break (min)</span>
+            <input [(ngModel)]="scheduleForm.unpaidBreakMinutes" type="number" min="0" step="15" name="shiftBreak" />
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="action-btn --primary" [disabled]="!scheduleForm.staffId" (click)="saveShift()">add shift</button>
+          <button type="button" class="action-btn --ghost" (click)="closePanel()">cancel</button>
+        </div>
+      </div>
+
+      <!-- ── Day summary ────────────────────────────────────────────────── -->
+      <div class="detail-grid">
+
+        <div class="detail-col">
+          <h4>shifts</h4>
+          <p class="col-empty" *ngIf="day.shifts.length === 0">no shifts scheduled</p>
+          <div class="day-item" *ngFor="let shift of day.shifts">
+            <div class="day-item-info">
+              <strong>{{ getStaffName(shift.staffId) }}</strong>
+              <p>{{ shift.startTime }}–{{ shift.endTime }} · {{ shift.location }} · {{ getShiftHours(shift) | number: '1.1-1' }}h</p>
+            </div>
+            <span class="chip" [ngClass]="shift.status">{{ shift.status }}</span>
+          </div>
+        </div>
+
+        <div class="detail-col">
+          <h4>leave</h4>
+          <p class="col-empty" *ngIf="day.leave.length === 0">no leave on this date</p>
+          <div class="day-item" *ngFor="let req of day.leave">
+            <div class="day-item-info">
+              <strong>{{ getStaffName(req.staffId) }}</strong>
+              <p>{{ req.leaveType }} · {{ req.reason || 'no reason provided' }}</p>
+            </div>
+            <div class="day-item-actions">
+              <span class="chip" [ngClass]="req.status">{{ req.status }}</span>
+              <ng-container *ngIf="hasAdminAccess && req.status === 'pending'">
+                <button type="button" class="chip-btn --approve" (click)="reviewLeave(req, 'approved')">approve</button>
+                <button type="button" class="chip-btn --reject" (click)="reviewLeave(req, 'rejected')">reject</button>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-col">
+          <h4>availability</h4>
+          <p class="col-empty" *ngIf="day.availability.length === 0">none submitted</p>
+          <div class="day-item" *ngFor="let avail of day.availability">
+            <div class="day-item-info">
+              <strong>{{ getStaffName(avail.staffId) }}</strong>
+              <p>{{ avail.startTime }}–{{ avail.endTime }} · {{ avail.source === 'admin' ? 'admin set' : 'self-submitted' }}</p>
+            </div>
+            <button type="button" class="chip-btn --remove" *ngIf="hasAdminAccess" (click)="removeAvailability(avail)">remove</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</section>

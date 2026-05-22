@@ -1,0 +1,527 @@
+<section class="pos-page">
+  <!-- Header Section -->
+  <div class="pos-header">
+    <div class="header-title">
+      <h1>POS</h1>
+      <p>Menu items sync from Admin Menu and only sell against open inventory sessions.</p>
+    </div>
+
+    <div class="header-controls">
+      <div class="control-group inventory-picker">
+        <label>Open inventory session</label>
+        <ng-container *ngIf="availableInventoryOptions.length > 0; else noOpenInventorySession">
+          <select [(ngModel)]="inventorySource" (change)="setInventorySource(inventorySource)" class="source-select">
+            <option *ngFor="let option of availableInventoryOptions" [ngValue]="option.type">{{ option.label }}</option>
+          </select>
+          <small>Only currently open sessions are shown here.</small>
+        </ng-container>
+        <ng-template #noOpenInventorySession>
+          <span class="status-inactive">No open inventory sessions</span>
+          <small>Open Store, Pop-up, or Event inventory first.</small>
+        </ng-template>
+        <span [class]="isOperationActive ? 'status-active' : 'status-inactive'">
+          {{ operationStatus }}
+        </span>
+      </div>
+
+      <div class="control-group" *ngIf="staffAccounts.length > 0 && hasOperatorSession; else operatorSignIn">
+        <label>Operator:</label>
+        <span class="status-active">{{ currentStaffName }}</span>
+        <button class="btn btn-secondary" (click)="signOutOperator()">Switch Operator</button>
+      </div>
+
+      <ng-template #operatorSignIn>
+        <div class="control-group" *ngIf="staffAccounts.length > 0">
+          <label>Operator:</label>
+          <input [(ngModel)]="operatorCode" class="source-select" type="text" autocomplete="off" placeholder="Staff code">
+          <input [(ngModel)]="operatorPin" class="source-select" type="password" inputmode="numeric" maxlength="8" placeholder="Daily POS PIN">
+          <button class="btn btn-primary" (click)="signInOperator()" [disabled]="!operatorCode.trim() || !operatorPin.trim()">Sign In</button>
+        </div>
+      </ng-template>
+
+      <div class="control-group">
+        <button class="btn btn-primary" (click)="showQrScanner = true">
+          📱 Scan Loyalty QR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Message -->
+  <div *ngIf="feedback" class="feedback-banner" [class.success]="feedback.includes('✓')" [class.error]="feedback.includes('❌')">
+    {{ feedback }}
+  </div>
+
+  <!-- QR Scanner Modal -->
+  <div *ngIf="showQrScanner" class="qr-modal">
+    <div class="qr-modal-content">
+      <button class="close-btn" (click)="showQrScanner = false">✕</button>
+      <app-qr-scanner (scanned)="onQrScanned($event)" (closed)="showQrScanner = false"></app-qr-scanner>
+    </div>
+  </div>
+
+  <!-- Loyalty Customer Info -->
+  <div *ngIf="loyaltyCustomer" class="loyalty-banner">
+    <span class="icon">⭐</span>
+    <div class="customer-info">
+      <strong>{{ loyaltyCustomer.name }}</strong>
+      <span class="points">{{ loyaltyCustomer.points }} points</span>
+    </div>
+    <button class="btn-small" (click)="loyaltyCustomer = null">Remove</button>
+  </div>
+
+  <!-- Main Grid: Menu + Order -->
+  <div class="pos-main">
+    <!-- MENU SECTION -->
+    <div class="menu-section">
+      <div class="menu-header">
+        <h2>Menu Items</h2>
+        <span class="count">{{ filteredMenuItems.length }} / {{ menuItems.length }} items</span>
+      </div>
+
+      <div class="menu-filters" *ngIf="menuItems.length > 0">
+        <input
+          type="search"
+          [(ngModel)]="menuSearch"
+          placeholder="Search menu items"
+          class="menu-search">
+
+        <select [(ngModel)]="selectedMenuCategory" class="menu-filter-select">
+          <option value="all">All categories</option>
+          <option *ngFor="let category of menuCategories" [value]="category">{{ category }}</option>
+        </select>
+
+        <select [(ngModel)]="selectedMenuStatus" class="menu-filter-select">
+          <option value="all">All statuses</option>
+          <option value="available">Ready to sell</option>
+          <option value="not-available">Not available</option>
+          <option value="out-of-stock">Out of stock</option>
+          <option value="low-stock">10 or fewer left</option>
+        </select>
+      </div>
+
+      <div class="empty-state" *ngIf="menuItems.length === 0">
+        <p>No menu items available yet.</p>
+        <p>Create menu items in Admin Menu before starting UAT sales.</p>
+      </div>
+
+      <div class="empty-state" *ngIf="menuItems.length > 0 && filteredMenuItems.length === 0">
+        <p>No menu items match the current filters</p>
+      </div>
+
+      <div class="menu-grid" *ngIf="filteredMenuItems.length > 0">
+        <button 
+          *ngFor="let item of filteredMenuItems" 
+          type="button"
+          class="menu-item"
+          [class.unavailable]="!item.available"
+          [class.out-of-stock]="getMenuStatus(item).outOfStock"
+          [class.low-stock]="getMenuStatus(item).lowStock"
+          (click)="addToOrder(item)"
+          [disabled]="!item.available || getMenuStatus(item).outOfStock || !isOperationActive || !hasOperatorSession">
+          
+          <div class="item-header">
+            <h3>{{ item.name }}</h3>
+            <span class="price">₱{{ item.price }}</span>
+          </div>
+          
+          <p class="category">{{ item.category }}</p>
+          <p class="notes" *ngIf="item.notes">{{ item.notes }}</p>
+
+          <div class="badge-row">
+            <span class="badge" [class.available]="item.available" [class.unavailable]="!item.available">
+              {{ item.available ? 'Available' : 'Not Available' }}
+            </span>
+
+            <span class="badge warning" *ngIf="getMenuStatus(item).lowStock && !getMenuStatus(item).outOfStock">
+              {{ getMenuStatus(item).remainingOrders }} order{{ getMenuStatus(item).remainingOrders === 1 ? '' : 's' }} left
+            </span>
+
+            <span class="badge out" *ngIf="getMenuStatus(item).outOfStock">
+              Out of Stock
+            </span>
+          </div>
+
+          <p class="inventory-warning" *ngIf="getMenuStatus(item).lowStock && !getMenuStatus(item).outOfStock">
+            Warning: this item will be depleted in less than 10 more orders from the current {{ inventorySource }} inventory.
+          </p>
+
+          <p class="inventory-warning inactive" *ngIf="!isOperationActive">
+            Open a {{ inventorySource }} inventory session to sell this item.
+          </p>
+
+          <p class="inventory-warning inactive" *ngIf="isOperationActive && !hasOperatorSession">
+            Sign in the current operator before selling this item.
+          </p>
+        </button>
+      </div>
+    </div>
+
+    <!-- ORDER SECTION -->
+    <div class="order-section">
+      <div class="order-header">
+        <div class="order-header-title">
+          <h2>Current Order</h2>
+          <span class="count">{{ orderItems.length }} item{{ orderItems.length === 1 ? '' : 's' }}</span>
+        </div>
+        <div class="order-tab-strip" *ngIf="orderItems.length > 0">
+          <button class="tab-btn" [class.active]="activeOrderTab === 'order'" (click)="activeOrderTab = 'order'">
+            Order <span class="tab-count">{{ orderItems.length }}</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeOrderTab === 'payment'" (click)="activeOrderTab = 'payment'">
+            Payment
+            <span class="tab-count" [class.tab-paid]="isPaymentComplete()" [class.tab-unpaid]="!isPaymentComplete()">
+              {{ isPaymentComplete() ? '✓' : '!' }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ORDER TAB PANEL -->
+      <div class="order-tab-panel" *ngIf="orderItems.length === 0 || activeOrderTab === 'order'">
+      <div class="guest-organizer">
+        <div class="guest-toolbar">
+          <div class="guest-field">
+            <label for="guestLabel">Guest Tag</label>
+            <div class="guest-input-row">
+              <input
+                id="guestLabel"
+                type="text"
+                [ngModel]="guestLabelDraft"
+                (ngModelChange)="onGuestLabelInput($event)"
+                placeholder="Type a guest or group name, e.g. Trish"
+                class="guest-input">
+            </div>
+          </div>
+          <p class="guest-helper">
+            {{ orderItems.length > 0 ? 'Updating this field renames the current guest group and applies it to its items.' : 'Start typing before or after adding items and the current order will update automatically.' }}
+          </p>
+        </div>
+
+        <div class="guest-chip-list" *ngIf="guestTags.length > 0 || orderItems.length > 0">
+          <button
+            *ngFor="let guest of guestTags"
+            type="button"
+            class="guest-chip"
+            [class.active]="guest.id === activeGuestId"
+            (click)="selectGuestTag(guest.id)">
+            <span>{{ guest.label }}</span>
+            <span class="guest-count">{{ guestItemCounts[guest.id] || 0 }}</span>
+          </button>
+          <button type="button" class="guest-chip guest-chip-add" (click)="createNextGuest()">
+            + Another Guest
+          </button>
+        </div>
+      </div>
+
+      <div class="order-items">
+        <div class="empty-state" *ngIf="orderItems.length === 0">
+          <p>Select items and use guest tags to keep drinks organized by person.</p>
+        </div>
+
+        <div *ngIf="orderItems.length > 0" class="items-list">
+          <div *ngFor="let group of orderGroups" class="guest-group">
+            <div class="guest-group-header">
+              <div>
+                <strong>{{ group.label }}</strong>
+                <span>{{ group.itemCount }} drink{{ group.itemCount === 1 ? '' : 's' }}</span>
+              </div>
+              <button class="guest-link" type="button" (click)="selectGuestTag(group.guestId)">
+                Add more here
+              </button>
+            </div>
+
+            <div *ngFor="let item of group.items; let i = index" class="order-item">
+              <div class="item-info">
+                <div class="item-copy">
+                  <strong>{{ item.name }}</strong>
+                  <span class="item-tag">{{ group.label }} {{ i + 1 }}/{{ group.items.length }}</span>
+                </div>
+                <span class="price">₱{{ item.price }}</span>
+              </div>
+
+              <div class="item-actions">
+                <select
+                  [ngModel]="item.guestId"
+                  (ngModelChange)="updateItemGuest(item, $event)"
+                  class="guest-select">
+                  <option *ngFor="let guest of guestTags" [ngValue]="guest.id">{{ guest.label }}</option>
+                </select>
+                <select [(ngModel)]="item.discount" (change)="computeTotal()" class="discount-select">
+                  <option [value]="0">No Discount</option>
+                  <option [value]="item.price * 0.1">10% (-₱{{ (item.price * 0.1).toFixed(2) }})</option>
+                  <option [value]="item.price * 0.2">20% (-₱{{ (item.price * 0.2).toFixed(2) }})</option>
+                  <option [value]="item.price * 0.5">50% (-₱{{ (item.price * 0.5).toFixed(2) }})</option>
+                </select>
+                <button class="btn-remove" (click)="removeOrderItem(group.itemIndexes[i])">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Notes -->
+      <div class="order-notes" *ngIf="orderItems.length > 0">
+        <textarea [(ngModel)]="orderNotes" placeholder="Order notes (optional)..." class="notes-input"></textarea>
+      </div>
+
+      <!-- Order Tab Footer: total summary + proceed to payment -->
+      <div class="order-tab-footer" *ngIf="orderItems.length > 0">
+        <div class="tab-total-preview">
+          <span class="tab-total-label">Order Total</span>
+          <strong class="tab-total-amount">₱{{ finalTotal.toFixed(2) }}</strong>
+        </div>
+        <button class="btn-proceed-payment" (click)="activeOrderTab = 'payment'">
+          Payment →
+        </button>
+      </div>
+      </div><!-- /order-tab-panel -->
+
+      <!-- PAYMENT TAB PANEL -->
+      <div class="order-tab-panel payment-tab-panel" *ngIf="orderItems.length > 0 && activeOrderTab === 'payment'">
+      <!-- Discount & Totals -->
+      <div class="order-summary">
+        <div class="summary-row">
+          <span>Subtotal:</span>
+          <span class="amount">₱{{ total.toFixed(2) }}</span>
+        </div>
+
+        <div class="summary-row" *ngIf="itemDiscountTotal > 0">
+          <span>Item Discounts:</span>
+          <span class="discount-amount">-₱{{ itemDiscountTotal.toFixed(2) }}</span>
+        </div>
+
+        <div class="discount-controls">
+          <input 
+            type="number" 
+            min="0" 
+            [max]="total"
+            placeholder="Discount amount"
+            [(ngModel)]="discountAmount"
+            (change)="computeTotal()"
+            class="discount-input">
+          <div class="quick-discounts">
+            <button class="btn-small" (click)="applyDiscountPercentage(10)">10%</button>
+            <button class="btn-small" (click)="applyDiscountPercentage(20)">20%</button>
+            <button class="btn-small" (click)="applyDiscountPercentage(50)">50%</button>
+          </div>
+        </div>
+
+        <div class="summary-row" *ngIf="discountAmount > 0">
+          <span>Order Discount:</span>
+          <span class="discount-amount">-₱{{ discountAmount.toFixed(2) }}</span>
+        </div>
+
+        <div class="summary-row total">
+          <span>Total:</span>
+          <span class="final-amount">₱{{ finalTotal.toFixed(2) }}</span>
+        </div>
+
+        <!-- Payment Method Tracking -->
+        <div class="payment-section">
+          <h3>Payment Method</h3>
+          
+          <div class="payment-splits" *ngIf="paymentMethods.length > 0">
+            <div *ngFor="let split of paymentMethods; let i = index" class="payment-split-row">
+              <span class="payment-badge">{{ getPaymentMethodLabel(split.method) }}</span>
+              <span class="payment-amount">₱{{ split.amount.toFixed(2) }}</span>
+              <button type="button" class="btn-remove" (click)="removePaymentSplit(i)">✕</button>
+            </div>
+            <div class="payment-total">
+              <span>Paid Total:</span>
+              <span [class.incomplete]="!isPaymentComplete()">₱{{ getTotalPaymentAmount().toFixed(2) }} / ₱{{ finalTotal.toFixed(2) }}</span>
+            </div>
+            <div class="payment-total remaining" *ngIf="!isPaymentComplete()">
+              <span>Remaining:</span>
+              <span class="incomplete">₱{{ getRemainingPaymentAmount().toFixed(2) }}</span>
+            </div>
+          </div>
+
+          <div class="payment-input-group">
+            <label>Add Payment</label>
+            <div class="payment-form">
+              <select #paymentMethod class="payment-method-select">
+                <option [value]="PaymentMethod.CASH">💵 Cash</option>
+                <option [value]="PaymentMethod.GCASH">📱 GCash</option>
+                <option [value]="PaymentMethod.MAYA">📱 Maya</option>
+              </select>
+              <input 
+                type="number" 
+                #paymentAmount 
+                min="0" 
+                step="0.01"
+                placeholder="Amount"
+                class="payment-amount-input">
+              <button 
+                type="button" 
+                class="btn btn-secondary" 
+                [disabled]="finalTotal <= 0 || getRemainingPaymentAmount() <= 0"
+                (click)="addPaymentSplit(paymentMethod.value, +paymentAmount.value); paymentAmount.value = ''; paymentAmount.focus()">
+                Add Payment
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button class="btn btn-primary" (click)="checkout()" [disabled]="!hasOperatorSession || !isPaymentComplete()">
+            ✓ Checkout
+          </button>
+          <button class="btn btn-secondary" (click)="clearOrder()">
+            🗑️ Clear
+          </button>
+        </div>
+      </div>
+      </div><!-- /payment-tab-panel -->
+
+    </div>
+  </div>
+
+  <div class="pos-secondary-grid">
+    <section class="wastage-panel" *ngIf="menuItems.length > 0">
+      <div class="panel-header">
+        <div>
+          <h3>Waste Board</h3>
+          <p class="panel-copy">Log waste, deduct from {{ inventorySource }} inventory, and assign to staff.</p>
+        </div>
+        <div class="waste-header-stats">
+          <span class="count-pill open-pill" *ngIf="openWastageCount > 0">{{ openWastageCount }} open</span>
+          <span class="count-pill">{{ wastageRecords.length }} total</span>
+        </div>
+      </div>
+
+      <div class="wastage-layout">
+        <!-- LOG WASTE FORM -->
+        <div class="wastage-form">
+          <div class="waste-form-header">
+            <span class="waste-icon">⚠</span>
+            <div>
+              <strong>Log Waste</strong>
+              <p>{{ currentStaffName }} · {{ inventorySource }}</p>
+            </div>
+          </div>
+
+          <div class="waste-field-group">
+            <label>Menu Item</label>
+            <select [(ngModel)]="wastageMenuId" class="wastage-select">
+              <option [ngValue]="null">— Select item —</option>
+              <option *ngFor="let item of menuItems" [ngValue]="item.id">{{ item.name }}</option>
+            </select>
+          </div>
+
+          <div class="waste-field-row">
+            <div class="waste-field-group">
+              <label>Qty</label>
+              <input
+                type="number"
+                min="1"
+                [(ngModel)]="wastageQuantity"
+                class="wastage-input"
+                placeholder="1">
+            </div>
+            <div class="waste-field-group">
+              <label>Reason</label>
+              <input
+                type="text"
+                [(ngModel)]="wastageReason"
+                class="wastage-input"
+                placeholder="e.g. wrong order, spilled...">
+            </div>
+          </div>
+
+          <div class="waste-field-group">
+            <label>Notes <span class="field-optional">(optional)</span></label>
+            <textarea
+              [(ngModel)]="wastageNotes"
+              placeholder="Any additional context..."
+              class="wastage-textarea"></textarea>
+          </div>
+
+          <button class="btn-waste-log" (click)="recordWastage()" [disabled]="!hasOperatorSession">
+            ⚠ Log Waste
+          </button>
+        </div>
+
+        <!-- WASTE RECORDS -->
+        <div class="wastage-records">
+          <div class="waste-filter-pills">
+            <button class="filter-pill" [class.active]="wastageFilter === 'all'" (click)="wastageFilter = 'all'">
+              All <span class="filter-count">{{ wastageRecords.length }}</span>
+            </button>
+            <button class="filter-pill" [class.active]="wastageFilter === 'open'" (click)="wastageFilter = 'open'">
+              Open <span class="filter-count open-count">{{ openWastageCount }}</span>
+            </button>
+            <button class="filter-pill" [class.active]="wastageFilter === 'charged'" (click)="wastageFilter = 'charged'">
+              Charged
+            </button>
+          </div>
+
+          <div class="empty-state compact" *ngIf="filteredWastageRecords.length === 0">
+            {{ wastageFilter === 'all' ? 'No waste records yet.' : 'No ' + wastageFilter + ' records.' }}
+          </div>
+
+          <div class="wastage-list" *ngIf="filteredWastageRecords.length > 0">
+            <article *ngFor="let record of filteredWastageRecords | slice:0:12" class="wastage-card" [class.card-open]="record.status === 'open'" [class.card-charged]="record.status !== 'open'">
+              <div class="waste-card-top">
+                <div class="waste-item-info">
+                  <strong class="waste-item-name">{{ record.menuItemName }}</strong>
+                  <span class="waste-qty-badge">×{{ record.quantity }}</span>
+                </div>
+                <span class="waste-status-badge" [class.status-open]="record.status === 'open'" [class.status-charged]="record.status !== 'open'">
+                  {{ record.status === 'open' ? '⚠ Open' : '✓ Charged' }}
+                </span>
+              </div>
+
+              <span class="waste-reason-tag">{{ record.reason }}</span>
+              <p class="wastage-card-note" *ngIf="record.notes">{{ record.notes }}</p>
+
+              <div class="waste-meta-row">
+                <span>{{ record.recordedAt | date: 'MMM d, h:mm a' }}</span>
+                <span>by {{ record.recordedByName || 'Unknown' }}</span>
+              </div>
+
+              <div class="waste-assign-row" *ngIf="record.status === 'open'">
+                <select [(ngModel)]="wastageAssignments[record.id]" class="wastage-select compact">
+                  <option value="">Assign to staff...</option>
+                  <option *ngFor="let staff of staffAccounts" [value]="staff.id">{{ staff.fullName }}</option>
+                </select>
+                <button class="btn-charge" (click)="assignWastage(record)" [disabled]="!wastageAssignments[record.id]">
+                  Charge
+                </button>
+              </div>
+
+              <div class="waste-charged-info" *ngIf="record.status !== 'open'">
+                <span>Charged to <strong>{{ record.assignedStaffName }}</strong></span>
+                <span>{{ record.assignedAt | date: 'MMM d, h:mm a' }}</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="recent-orders" *ngIf="recentOrders.length > 0">
+      <div class="panel-header">
+        <h3>📊 Recent Orders</h3>
+        <a routerLink="/admin/queue-board" class="view-all">View All →</a>
+      </div>
+
+      <div class="orders-preview">
+        <div *ngFor="let order of recentOrders" class="order-preview" [class]="'status-' + order.status">
+          <div class="order-ref">
+            <strong>{{ order.orderNumber }}</strong>
+            <span class="time">{{ order.createdAt | date: 'short' }}</span>
+          </div>
+          <div class="order-details">
+            <span>{{ order.items.length }} items</span>
+            <span class="price">₱{{ order.finalAmount.toFixed(2) }}</span>
+          </div>
+          <div class="order-status">
+            <span [class]="'badge status-' + order.status">{{ order.status | uppercase }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

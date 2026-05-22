@@ -1,0 +1,146 @@
+<section class="admin-section">
+  <h1>Menu</h1>
+  <p class="section-copy">Items created in Menu Builder appear here. Edit recipes from master inventory and require a typed confirmation before deleting.</p>
+
+  <p class="feedback" *ngIf="feedback">{{ feedback }}</p>
+
+  <div class="empty-state" *ngIf="menuItems.length === 0">
+    no menu items yet. create one in menu builder.
+  </div>
+
+  <div class="menu-cards" *ngIf="menuItems.length > 0">
+    <article class="menu-card" *ngFor="let item of menuItems">
+      <header>
+        <div class="card-title-block">
+          <h2>{{ item.name }}</h2>
+          <p class="meta">{{ item.category }} · ₱{{ item.price }}</p>
+        </div>
+        <div class="card-actions">
+          <button type="button" (click)="startEdit(item)">edit</button>
+          <button type="button" class="danger" (click)="openDeleteDialog(item)">remove</button>
+        </div>
+      </header>
+      <p class="availability" [class.off]="!item.available">
+        {{ item.available ? 'available' : 'not available' }}
+      </p>
+
+      <div class="availability-actions">
+        <button type="button" (click)="setAvailability(item.id, true)" [disabled]="item.available">set available</button>
+        <button type="button" (click)="setAvailability(item.id, false)" [disabled]="!item.available">set not available</button>
+      </div>
+
+      <div class="recipe-summary">
+        <span>{{ item.ingredients.length }} ingredient{{ item.ingredients.length === 1 ? '' : 's' }}</span>
+        <span *ngIf="item.notes">{{ item.notes }}</span>
+      </div>
+
+      <ul>
+        <li *ngFor="let ingredient of item.ingredients">
+          {{ ingredient.amount }} {{ ingredient.unit }} {{ ingredient.inventoryItemName }}
+        </li>
+      </ul>
+    </article>
+  </div>
+
+  <section class="editor-dialog" *ngIf="editingItem">
+    <div class="editor-card">
+      <header class="editor-header">
+        <div>
+          <h2>Edit Menu Item</h2>
+          <p>Update pricing, notes, availability, and recipe ingredients from master inventory.</p>
+        </div>
+        <button type="button" class="secondary" (click)="cancelEdit()">close</button>
+      </header>
+
+      <div class="edit-form">
+        <div class="editor-fields">
+          <label>
+            name
+            <input #editName type="text" [value]="editingItem.name" />
+          </label>
+          <label>
+            category
+            <select #editCategory>
+              <option *ngFor="let category of categories" [value]="category" [selected]="category === editingItem.category">{{ category }}</option>
+            </select>
+          </label>
+          <label>
+            price
+            <input #editPrice type="number" min="1" step="0.01" [value]="editingItem.price" />
+          </label>
+          <label>
+            availability
+            <select #editAvailability>
+              <option value="true" [selected]="editingItem.available">available</option>
+              <option value="false" [selected]="!editingItem.available">not available</option>
+            </select>
+          </label>
+          <label class="notes-field full-width">
+            notes
+            <textarea #editNotes rows="3">{{ editingItem.notes }}</textarea>
+          </label>
+        </div>
+
+        <div class="ingredients-editor">
+          <div class="ingredients-head">
+            <div>
+              <h3>recipe ingredients</h3>
+              <p>Select ingredients and set recipe amounts from master inventory.</p>
+            </div>
+            <span class="ingredient-count">{{ editIngredients.length }} selected</span>
+          </div>
+
+          <div class="ingredient-grid">
+            <article class="ingredient-option" *ngFor="let inventoryItem of inventory" [class.selected]="isIngredientSelected(inventoryItem.id)">
+              <div class="ingredient-top">
+                <label class="ingredient-check">
+                  <input
+                    type="checkbox"
+                    [checked]="isIngredientSelected(inventoryItem.id)"
+                    (change)="toggleIngredient(inventoryItem, $any($event.target).checked)"
+                  />
+                  <span>{{ inventoryItem.name }}</span>
+                </label>
+                <span class="ingredient-stock">{{ inventoryItem.quantity }} {{ inventoryItem.unit }} in stock</span>
+              </div>
+
+              <label class="ingredient-amount">
+                recipe amount
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  [value]="ingredientAmount(inventoryItem.id)"
+                  [disabled]="!isIngredientSelected(inventoryItem.id)"
+                  (input)="updateIngredientAmount(inventoryItem.id, $any($event.target).valueAsNumber)"
+                />
+              </label>
+            </article>
+          </div>
+        </div>
+
+        <div class="edit-actions">
+          <button
+            type="button"
+            (click)="saveEdit(editingItem.id, editName.value, editCategory.value, editPrice.valueAsNumber, editNotes.value, editAvailability.value === 'true')"
+          >
+            save changes
+          </button>
+          <button type="button" class="secondary" (click)="cancelEdit()">cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="confirm-dialog" *ngIf="deleteTarget">
+    <div class="dialog-card">
+      <h2>Delete menu item</h2>
+      <p>Are you sure you want to delete this item from menu? Please type "{{ deleteTarget.name }}" before proceeding.</p>
+      <input #confirmName type="text" [placeholder]="deleteTarget.name" />
+      <div class="dialog-actions">
+        <button type="button" class="danger" (click)="confirmDelete(confirmName.value)">delete item</button>
+        <button type="button" class="secondary" (click)="closeDeleteDialog()">cancel</button>
+      </div>
+    </div>
+  </section>
+</section>

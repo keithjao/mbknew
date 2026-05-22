@@ -1,0 +1,259 @@
+@use '../../shared/styles/website-patterns' as patterns;
+
+.account-page {
+  display: grid;
+  gap: 2.25rem;
+}
+
+.account-hero {
+  max-width: 42rem;
+
+  h1 {
+    @include patterns.page-title;
+  }
+}
+
+.account-eyebrow {
+  @include patterns.eyebrow;
+}
+
+.account-copy {
+  @include patterns.intro-copy;
+  max-width: 36rem;
+}
+
+.account-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.2fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+.account-main {
+  display: grid;
+  gap: 2rem;
+}
+
+.account-summary-card,
+.account-panel-card,
+.account-roadmap,
+.account-state-card {
+  @include patterns.section-rule;
+}
+
+.account-summary-card {
+  display: grid;
+  gap: 0.95rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.18rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    text-transform: lowercase;
+  }
+
+  p {
+    margin: 0;
+    color: #6b665e;
+    font-size: 0.9rem;
+    text-transform: lowercase;
+  }
+}
+
+.account-meta,
+.account-note {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.account-note {
+  padding-top: 1rem;
+  border-top: 1px solid rgba(26, 26, 26, 0.08);
+}
+
+.account-note strong,
+.account-panel-card h2 {
+  margin: 0;
+  color: #1a1a1a;
+  text-transform: lowercase;
+}
+
+.account-note strong {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.account-panel-label {
+  @include patterns.panel-label;
+}
+
+.auth-switcher {
+  display: flex;
+  gap: 1.6rem;
+  margin-bottom: 1.35rem;
+  flex-wrap: wrap;
+}
+
+.auth-switcher button,
+.account-action {
+  @include patterns.tab-button;
+}
+
+.auth-switcher button.active,
+.account-action {
+  @include patterns.tab-button-active;
+}
+
+.account-action.secondary {
+  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.account-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.account-form label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.account-form span {
+  @include patterns.field-label;
+}
+
+.account-form input {
+  @include patterns.field-input;
+}
+
+.account-form input:focus {
+  @include patterns.field-input-focus;
+}
+
+.account-feedback {
+  @include patterns.feedback;
+}
+
+.account-feedback.success {
+  color: var(--accent);
+}
+
+.account-feedback.error {
+  color: #9f4d4d;
+}
+
+.status-panel {
+  display: grid;
+  gap: 0.8rem;
+
+  h2 {
+    font-size: 1.18rem;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    color: #6b665e;
+    text-transform: lowercase;
+  }
+}
+
+.account-home-grid,
+.account-state-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.4rem;
+}
+
+.account-home-block {
+  display: grid;
+  gap: 0.45rem;
+  padding-top: 0.2rem;
+
+  strong {
+    color: #1a1a1a;
+    font-size: 0.92rem;
+    text-transform: lowercase;
+  }
+
+  p {
+    margin: 0;
+    color: #6b665e;
+    font-size: 0.9rem;
+    text-transform: lowercase;
+  }
+}
+
+.account-home-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 0.35rem;
+}
+
+.account-state-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.account-state-card {
+  display: grid;
+  gap: 0.65rem;
+  padding-top: 0.9rem;
+}
+
+.account-state-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+
+  strong {
+    color: #1a1a1a;
+    font-size: 0.95rem;
+    text-transform: lowercase;
+  }
+
+  span {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #2f5d50;
+  }
+}
+
+.account-state-card p {
+  margin: 0;
+  color: #6b665e;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  text-transform: lowercase;
+}
+
+@media (max-width: 900px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .account-home-grid,
+  .account-state-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .account-page {
+    gap: 1.75rem;
+  }
+
+  .account-hero h1 {
+    font-size: 1.35rem;
+  }
+
+  .auth-switcher {
+    gap: 1rem;
+  }
+}

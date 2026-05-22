@@ -1,0 +1,229 @@
+<div class="event-management">
+  <div class="events-header">
+    <h2>Event Operations</h2>
+    <button class="btn-primary" (click)="createNewEvent()">+ New Event</button>
+  </div>
+
+  <div class="events-container">
+    <!-- Events List -->
+    <div class="events-list">
+      <div class="list-header">
+        <h3>Events</h3>
+        <select [(ngModel)]="filterStatus" class="status-filter">
+          <option value="All">All</option>
+          <option *ngFor="let status of eventStatuses" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+
+      <div *ngIf="filteredEvents.length === 0" class="empty-state">
+        <p>No events found. Create one to get started.</p>
+      </div>
+
+      <div class="events-grid">
+        <div
+          *ngFor="let event of filteredEvents"
+          class="event-card"
+          [class.active]="selectedEvent?.id === event.id"
+          (click)="selectEvent(event)"
+        >
+          <div class="card-header">
+            <h4>{{ event.name }}</h4>
+            <span
+              class="status-badge"
+              [style.background-color]="getStatusColor(event.status)"
+            >
+              {{ event.status }}
+            </span>
+          </div>
+          <div class="card-details">
+            <div class="detail">
+              <span class="label">📍</span>
+              <span class="value">{{ event.venue }}</span>
+            </div>
+            <div class="detail">
+              <span class="label">📅</span>
+              <span class="value">{{ formatDate(event.date) }}</span>
+            </div>
+            <div class="detail">
+              <span class="label">🕒</span>
+              <span class="value">{{ event.time }}</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="item-count">{{ event.checklist.length }} items</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Details -->
+    <div class="event-details">
+      <div *ngIf="!showForm && !showChecklist && !selectedEvent" class="no-selection">
+        <p>Select an event or create a new one</p>
+      </div>
+
+      <!-- New/Edit Event Form -->
+      <div *ngIf="showForm" class="form-section">
+        <h3>{{ selectedEvent ? 'Edit' : 'Create' }} Event</h3>
+        <form [formGroup]="eventForm" (ngSubmit)="saveEvent()">
+          <div class="form-group">
+            <label for="event-name">Event Name</label>
+            <input
+              id="event-name"
+              type="text"
+              formControlName="name"
+              placeholder="e.g., Cherry Blossom Workshop"
+              class="input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="venue">Venue/Location</label>
+            <input
+              id="venue"
+              type="text"
+              formControlName="venue"
+              placeholder="e.g., Central Park, NYC"
+              class="input"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="date">Date</label>
+              <input
+                id="date"
+                type="date"
+                formControlName="date"
+                class="input"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="time">Time</label>
+              <input
+                id="time"
+                type="time"
+                formControlName="time"
+                class="input"
+              />
+            </div>
+          </div>
+
+          <!-- Template Selector (only for new events) -->
+          <div *ngIf="!selectedEvent" class="form-group">
+            <label for="template">Select Template (Optional)</label>
+            <select [(ngModel)]="selectedTemplateId" [ngModelOptions]="{ standalone: true }" class="input">
+              <option [value]="null">No template</option>
+              <option *ngFor="let template of templates" [value]="template.id">
+                {{ template.name }}
+              </option>
+            </select>
+            <small *ngIf="selectedTemplateId" class="template-info">
+              ✓ Template items will be copied to this event
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="status">Status</label>
+            <select formControlName="status" class="input">
+              <option *ngFor="let status of eventStatuses" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea
+              id="notes"
+              formControlName="notes"
+              placeholder="Add any notes about this event"
+              class="input textarea"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" [disabled]="eventForm.invalid">
+              {{ selectedEvent ? 'Update' : 'Create' }} Event
+            </button>
+            <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Event Checklist Editor -->
+      <app-event-checklist-editor
+        *ngIf="showChecklist && selectedEvent"
+        [event]="selectedEvent"
+        (close)="closeChecklist()"
+      ></app-event-checklist-editor>
+
+      <!-- Event Details View -->
+      <div *ngIf="selectedEvent && !showForm && !showChecklist" class="event-info">
+        <div class="info-header">
+          <div>
+            <h3>{{ selectedEvent.name }}</h3>
+            <span
+              class="status-badge"
+              [style.background-color]="getStatusColor(selectedEvent.status)"
+            >
+              {{ selectedEvent.status }}
+            </span>
+          </div>
+          <div class="actions">
+            <button class="btn-secondary" (click)="editEvent()">Edit Details</button>
+            <button class="btn-danger" (click)="deleteEvent(selectedEvent)">Delete</button>
+          </div>
+        </div>
+
+        <div class="event-metadata">
+          <div class="meta-item">
+            <label>Venue</label>
+            <p>{{ selectedEvent.venue }}</p>
+          </div>
+          <div class="meta-row">
+            <div class="meta-item">
+              <label>Date</label>
+              <p>{{ formatDate(selectedEvent.date) }}</p>
+            </div>
+            <div class="meta-item">
+              <label>Time</label>
+              <p>{{ selectedEvent.time }}</p>
+            </div>
+          </div>
+          <div *ngIf="selectedEvent.templateName" class="meta-item">
+            <label>Template Used</label>
+            <p>{{ selectedEvent.templateName }} (independent copy)</p>
+          </div>
+          <div *ngIf="selectedEvent.notes" class="meta-item">
+            <label>Notes</label>
+            <p>{{ selectedEvent.notes }}</p>
+          </div>
+        </div>
+
+        <!-- Status Change -->
+        <div class="status-section">
+          <label>Change Status</label>
+          <div class="status-buttons">
+            <button
+              *ngFor="let status of eventStatuses"
+              class="status-btn"
+              [class.active]="selectedEvent.status === status"
+              [style.border-color]="getStatusColor(status)"
+              (click)="updateEventStatus(status)"
+            >
+              {{ status }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Checklist Access -->
+        <div class="checklist-access">
+          <button class="btn-primary btn-large" (click)="openChecklist()">
+            Open Checklist ({{ selectedEvent.checklist.length }} items)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

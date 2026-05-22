@@ -1,0 +1,266 @@
+.admin-access-page {
+  max-width: 32rem;
+}
+
+.admin-access-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.6rem;
+  background: rgba(250, 248, 244, 0.98);
+  border: 1px solid rgba(139, 115, 85, 0.14);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(26, 26, 26, 0.07), 0 2px 6px rgba(139, 115, 85, 0.06);
+}
+
+.access-eyebrow {
+  margin: 0;
+  font-size: 0.73rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #8B7355;
+  font-weight: 600;
+}
+
+.admin-access-card h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-transform: lowercase;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.access-copy,
+.access-note p,
+.access-feedback {
+  margin: 0;
+  color: #666056;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  text-transform: lowercase;
+}
+
+.access-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.auth-switcher {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 4px;
+  background: rgba(139, 115, 85, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(139, 115, 85, 0.12);
+}
+
+.auth-switcher button {
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 0.65rem 0.9rem;
+  background: transparent;
+  color: #666056;
+  font: inherit;
+  font-size: 0.88rem;
+  text-transform: lowercase;
+  cursor: pointer;
+  transition: all 150ms ease;
+
+  &:hover {
+    color: #1a1a1a;
+    background: rgba(139, 115, 85, 0.08);
+  }
+}
+
+.auth-switcher button.active {
+  background: #fff;
+  color: #1a1a1a;
+  border-color: rgba(139, 115, 85, 0.2);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(26, 26, 26, 0.08);
+}
+
+.setup-credential {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.95rem 1rem;
+  background: rgba(139, 115, 85, 0.06);
+  border: 1px solid rgba(139, 115, 85, 0.16);
+  border-radius: 10px;
+
+  strong {
+    color: #1a1a1a;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-transform: lowercase;
+  }
+
+  p {
+    margin: 0;
+    color: #7a614e;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    text-transform: lowercase;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.84rem;
+  }
+
+  button {
+    justify-self: start;
+    margin-top: 0.3rem;
+  }
+}
+
+.access-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.access-form span {
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #8B7355;
+  font-weight: 600;
+}
+
+.access-form input {
+  width: 100%;
+  border: 1px solid rgba(139, 115, 85, 0.2);
+  border-radius: 10px;
+  padding: 0.85rem 0.9rem;
+  background: #fff;
+  color: #1a1a1a;
+  font: inherit;
+  font-size: 0.92rem;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.access-form input:focus {
+  outline: none;
+  border-color: rgba(139, 115, 85, 0.5);
+  box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+}
+
+.access-form input::placeholder {
+  color: #b8b0a6;
+}
+
+.access-form button,
+.access-actions a,
+.access-actions button {
+  border: 1px solid rgba(139, 115, 85, 0.25);
+  border-radius: 10px;
+  padding: 0.82rem 1rem;
+  background: #1a1a1a;
+  color: #f5f2ed;
+  text-decoration: none;
+  text-align: center;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: lowercase;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background 150ms, transform 100ms;
+
+  &:hover:not(:disabled) {
+    background: #2d2d2d;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.access-actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.access-actions a,
+.access-actions button {
+  flex: 1;
+}
+
+.access-actions .secondary {
+  background: rgba(139, 115, 85, 0.08);
+  color: #4a3f35;
+  border-color: rgba(139, 115, 85, 0.18);
+
+  &:hover:not(:disabled) {
+    background: rgba(139, 115, 85, 0.14);
+  }
+}
+
+.access-note {
+  display: grid;
+  gap: 0.35rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(139, 115, 85, 0.1);
+}
+
+.reset-note {
+  gap: 0.65rem;
+}
+
+.access-note strong {
+  color: #1a1a1a;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.danger-action {
+  justify-self: start;
+  border: 1px solid rgba(161, 77, 77, 0.22);
+  border-radius: 10px;
+  padding: 0.72rem 0.95rem;
+  background: rgba(161, 77, 77, 0.06);
+  color: #8f3f3f;
+  font: inherit;
+  font-size: 0.88rem;
+  text-transform: lowercase;
+  cursor: pointer;
+  transition: background 150ms;
+
+  &:hover {
+    background: rgba(161, 77, 77, 0.12);
+  }
+}
+
+.recovery-actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.access-feedback.success {
+  color: #3a6e4f;
+  font-weight: 500;
+}
+
+.access-feedback.error {
+  color: #a14d4d;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .admin-access-page {
+    max-width: none;
+  }
+
+  .admin-access-card {
+    padding: 1.2rem;
+    border-radius: 14px;
+  }
+
+  .access-actions {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,367 @@
+.section-copy {
+  margin: 0 0 1.2rem;
+  color: var(--ink-soft);
+}
+
+.feedback {
+  margin: 0 0 1rem;
+  color: var(--ink-soft);
+}
+
+.empty-state {
+  border: 1px dashed var(--line);
+  border-radius: 0.7rem;
+  padding: 1rem;
+  color: var(--ink-soft);
+}
+
+.menu-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.menu-card {
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  padding: 1rem;
+  background: #fff;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.menu-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.card-title-block {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.menu-card h2 {
+  font-size: 1rem;
+  margin: 0;
+  text-transform: lowercase;
+}
+
+.menu-card .meta {
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.availability {
+  margin: 0.1rem 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--accent);
+  text-transform: lowercase;
+}
+
+.availability.off {
+  color: #8a7f70;
+}
+
+.availability-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0 0 0.6rem;
+}
+
+.availability-actions button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 0.35rem;
+  padding: 0.22rem 0.55rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.availability-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.menu-card ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.menu-card li {
+  margin: 0.2rem 0;
+  font-size: 0.92rem;
+}
+
+.menu-card button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+}
+
+.menu-card button.danger,
+.dialog-actions .danger {
+  border-color: rgba(162, 72, 72, 0.2);
+  color: #a24848;
+}
+
+.recipe-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.8rem;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+}
+
+.edit-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.editor-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 16, 12, 0.42);
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+  z-index: 25;
+}
+
+.editor-card {
+  width: min(100%, 72rem);
+  max-height: calc(100vh - 2.4rem);
+  overflow: auto;
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 18px 48px rgba(18, 16, 12, 0.18);
+  display: grid;
+  gap: 1rem;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.editor-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.editor-header p {
+  margin: 0.35rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.editor-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.edit-form label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.edit-form input,
+.edit-form select,
+.edit-form textarea {
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+}
+
+.notes-field textarea {
+  resize: vertical;
+}
+
+.ingredients-editor {
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  padding: 0.8rem;
+  background: #faf8f4;
+}
+
+.ingredients-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+}
+
+.ingredients-editor h3 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.ingredients-head p {
+  margin: 0.3rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+}
+
+.ingredient-count {
+  white-space: nowrap;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.ingredient-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.ingredient-option {
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ingredient-option.selected {
+  border-color: rgba(47, 93, 80, 0.35);
+  background: rgba(47, 93, 80, 0.04);
+}
+
+.ingredient-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.ingredient-check {
+  display: inline-flex;
+  gap: 0.55rem;
+  align-items: center;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.ingredient-stock {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.ingredient-amount {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.edit-actions,
+.dialog-actions {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.edit-actions .secondary,
+.dialog-actions .secondary {
+  background: #f7f5f1;
+}
+
+.confirm-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 16, 12, 0.42);
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+  z-index: 30;
+}
+
+.dialog-card {
+  width: min(100%, 28rem);
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 18px 48px rgba(18, 16, 12, 0.18);
+  display: grid;
+  gap: 0.85rem;
+}
+
+.dialog-card h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.dialog-card p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.dialog-card input {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.notes {
+  margin: 0.7rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 700px) {
+  .menu-card header,
+  .editor-header,
+  .ingredients-head,
+  .ingredient-top,
+  .card-actions,
+  .edit-actions,
+  .dialog-actions {
+    flex-wrap: wrap;
+  }
+
+  .editor-fields,
+  .ingredient-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-card {
+    padding: 1rem;
+  }
+
+  .card-actions,
+  .availability-actions,
+  .edit-actions,
+  .dialog-actions {
+    width: 100%;
+  }
+
+  .card-actions button,
+  .availability-actions button,
+  .edit-actions button,
+  .dialog-actions button,
+  .editor-header .secondary {
+    flex: 1 1 10rem;
+  }
+}

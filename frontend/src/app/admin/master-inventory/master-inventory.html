@@ -1,0 +1,134 @@
+<section class="admin-section">
+  <h1>Master Inventory</h1>
+  <p class="section-copy">Admin-only inventory source. Store, pop-up, and event inventories are allocated from here.</p>
+
+  <form
+    class="inventory-controls"
+    #addForm
+    (submit)="addItem(name.value, quantity.valueAsNumber, unit.value, unitCost.valueAsNumber, addForm); $event.preventDefault()"
+  >
+    <input #name type="text" required placeholder="ingredient name" />
+    <input #quantity type="number" min="1" required placeholder="quantity" />
+    <input #unitCost type="number" min="0" step="0.01" required placeholder="price per unit" />
+    <select #unit>
+      <option value="ml">ml</option>
+      <option value="grams">grams</option>
+      <option value="piece">piece</option>
+    </select>
+    <button type="submit" class="add-btn">Add Item</button>
+  </form>
+
+  <p class="feedback" *ngIf="feedback">{{ feedback }}</p>
+
+  <table class="inventory-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Quantity</th>
+        <th>Unit</th>
+        <th>Unit Cost</th>
+        <th>Adjust Qty</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-container *ngFor="let item of pagedInventory">
+        <tr *ngIf="editingItemId !== item.id; else editRow">
+          <td>{{ item.name }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>{{ item.unit }}</td>
+          <td>₱{{ item.unitCost | number: '1.2-2' }}</td>
+          <td>
+            <input #adjustAmount type="number" min="1" value="1" />
+          </td>
+          <td class="row-actions">
+            <button type="button" (click)="startEdit(item)">edit</button>
+            <button type="button" (click)="addStock(item.id, adjustAmount.valueAsNumber)">add</button>
+            <button type="button" (click)="deductItem(item.id, adjustAmount.valueAsNumber)">deduct</button>
+            <button type="button" (click)="deleteItem(item.id)">remove</button>
+          </td>
+        </tr>
+        <ng-template #editRow>
+          <tr>
+            <td><input #editName type="text" [value]="item.name" /></td>
+            <td><input #editQuantity type="number" min="0" step="0.01" [value]="item.quantity" /></td>
+            <td>
+              <select #editUnit>
+                <option value="ml" [selected]="item.unit === 'ml'">ml</option>
+                <option value="grams" [selected]="item.unit === 'grams'">grams</option>
+                <option value="piece" [selected]="item.unit === 'piece'">piece</option>
+              </select>
+            </td>
+            <td>
+              <input #editUnitCost type="number" min="0" step="0.01" [value]="item.unitCost" />
+            </td>
+            <td>
+              <input #editAdjustAmount type="number" min="1" value="1" />
+            </td>
+            <td class="row-actions">
+              <button
+                type="button"
+                (click)="saveEdit(item.id, editName.value, editQuantity.valueAsNumber, editUnit.value, editUnitCost.valueAsNumber)"
+              >
+                save
+              </button>
+              <button type="button" (click)="addStock(item.id, editAdjustAmount.valueAsNumber)">add</button>
+              <button type="button" (click)="deductItem(item.id, editAdjustAmount.valueAsNumber)">deduct</button>
+              <button type="button" (click)="cancelEdit()">cancel</button>
+            </td>
+          </tr>
+        </ng-template>
+      </ng-container>
+    </tbody>
+  </table>
+
+  <div class="table-pager" *ngIf="inventory.length > pageSize">
+    <button type="button" [disabled]="inventoryPage === 1" (click)="setInventoryPage(inventoryPage - 1)">previous</button>
+    <span>page {{ inventoryPage }} of {{ inventoryTotalPages }}</span>
+    <button type="button" [disabled]="inventoryPage === inventoryTotalPages" (click)="setInventoryPage(inventoryPage + 1)">next</button>
+  </div>
+
+  <section class="confirm-dialog" *ngIf="deleteTarget">
+    <div class="dialog-card">
+      <h2>Delete inventory item</h2>
+      <p>Are you sure you want to delete this item? Type "{{ deleteTarget.name }}" to confirm.</p>
+      <input #confirmName type="text" [placeholder]="deleteTarget.name" />
+      <div class="dialog-actions">
+        <button type="button" class="danger" (click)="confirmDelete(confirmName.value)">delete item</button>
+        <button type="button" class="secondary" (click)="closeDeleteDialog()">cancel</button>
+      </div>
+    </div>
+  </section>
+</section>
+<section class="admin-section log-section">
+  <h2>Inventory Log</h2>
+  <button (click)="fetchLogs()">Refresh Log</button>
+  <table class="log-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Item ID</th>
+        <th>Action</th>
+        <th>Qty</th>
+        <th>Session</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let log of pagedLogs">
+        <td>{{ log.created_at | date:'short' }}</td>
+        <td>{{ log.inventory_id }}</td>
+        <td>{{ log.action }}</td>
+        <td>{{ log.quantity }}</td>
+        <td>{{ log.session_type }} ({{ log.session_date }})</td>
+        <td>{{ log.note }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-pager" *ngIf="logs.length > pageSize">
+    <button type="button" [disabled]="logPage === 1" (click)="setLogPage(logPage - 1)">previous</button>
+    <span>page {{ logPage }} of {{ logTotalPages }}</span>
+    <button type="button" [disabled]="logPage === logTotalPages" (click)="setLogPage(logPage + 1)">next</button>
+  </div>
+</section>

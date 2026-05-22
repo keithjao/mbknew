@@ -1,0 +1,364 @@
+<section class="admin-section finance-page">
+  <header class="finance-head">
+    <div>
+      <h1>Finance</h1>
+      <p class="section-copy">Use Finance as the transaction ledger for manual spendings and corrections, then use Reports for analytics. Paid POS orders drive sales totals automatically.</p>
+    </div>
+    <a routerLink="/admin/reports/financial" class="reports-link">open financial reports</a>
+  </header>
+
+  <div class="finance-overview-grid">
+    <section class="manual-entry-card">
+      <div>
+        <h2>Manual Ledger Entry</h2>
+        <p>Add rent, utilities, payroll, taxes, refunds, or non-POS sales corrections here.</p>
+      </div>
+
+      <form
+        class="manual-entry"
+        #entryForm
+        (submit)="addManualEntry(type.value, amount.valueAsNumber, note.value, category.value, date.value, entryForm); $event.preventDefault()"
+      >
+        <label class="manual-entry-field compact-field">
+          <span>entry type</span>
+          <select #type>
+            <option value="spending">spending</option>
+            <option value="sale">sale</option>
+          </select>
+        </label>
+
+        <label class="manual-entry-field compact-field">
+          <span>amount</span>
+          <input #amount type="number" min="0.01" step="0.01" placeholder="0.00" required />
+        </label>
+
+        <label class="manual-entry-field wide-field">
+          <span>note</span>
+          <input #note type="text" placeholder="rent, refund, utilities, adjustment" required />
+        </label>
+
+        <label class="manual-entry-field">
+          <span>category</span>
+          <input #category type="text" placeholder="optional category" />
+        </label>
+
+        <label class="manual-entry-field manual-entry-date">
+          <span>entry date</span>
+          <div class="manual-entry-date-row">
+            <input #date type="date" />
+            <button type="button" class="date-fill" (click)="date.value = todayKey()">use today</button>
+          </div>
+        </label>
+
+        <div class="manual-entry-actions">
+          <button type="submit">add entry</button>
+        </div>
+      </form>
+
+      <p class="helper-copy">Leave the date empty to use the current testing clock: {{ todayKey() }}.</p>
+
+      <p class="feedback" *ngIf="feedback">{{ feedback }}</p>
+    </section>
+
+    <section class="finance-snapshot-card">
+      <header class="snapshot-head">
+        <div>
+          <h2>Finance Snapshot</h2>
+          <p>One compact view for gross sales, net sales, spending, profit, and day-level pace.</p>
+        </div>
+      </header>
+
+      <div class="snapshot-grid">
+        <article>
+          <h3>Gross Sales</h3>
+          <p>₱{{ grossSales | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Net Sales</h3>
+          <p>₱{{ netSales | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Spendings</h3>
+          <p>₱{{ totalSpending | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Operating Profit</h3>
+          <p [class.negative]="operatingProfit < 0">₱{{ operatingProfit | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Discounts</h3>
+          <p>₱{{ totalDiscounts | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Ledger Sales Adj.</h3>
+          <p>₱{{ salesAdjustments | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Est. Cost of Drinks</h3>
+          <p>₱{{ estimatedCogs | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Profit Margin</h3>
+          <p [class.negative]="profitMargin < 0">{{ profitMargin | number: '1.1-1' }}%</p>
+        </article>
+        <article>
+          <h3>Paid Orders</h3>
+          <p>{{ ordersCount }}</p>
+        </article>
+        <article>
+          <h3>System Sales</h3>
+          <p>₱{{ systemSales | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Cash Sales</h3>
+          <p>₱{{ systemCashSales | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>GCash Sales</h3>
+          <p>₱{{ systemGcashSales | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Maya Sales</h3>
+          <p>₱{{ systemMayaSales | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Manual Sales</h3>
+          <p>₱{{ manualSales | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Avg Daily Net</h3>
+          <p>₱{{ averageDailyNet | number: '1.2-2' }}</p>
+        </article>
+        <article>
+          <h3>Avg Daily Spending</h3>
+          <p>₱{{ averageDailySpending | number: '1.2-2' }}</p>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <div class="period-filters">
+    <button type="button" [class.active]="selectedPeriod === 'day'" (click)="setPeriod('day')">day</button>
+    <button type="button" [class.active]="selectedPeriod === 'week'" (click)="setPeriod('week')">week</button>
+    <button type="button" [class.active]="selectedPeriod === 'month'" (click)="setPeriod('month')">month</button>
+    <button type="button" [class.active]="selectedPeriod === 'all'" (click)="setPeriod('all')">all</button>
+  </div>
+
+  <section class="ledger-toolbar">
+    <label class="filter-field search-field">
+      <span>search ledger</span>
+      <input type="text" [(ngModel)]="ledgerSearch" (ngModelChange)="updateLedgerFilters()" placeholder="search note, type, category" />
+    </label>
+
+    <label class="filter-field">
+      <span>entry type</span>
+      <select [(ngModel)]="ledgerTypeFilter" (ngModelChange)="updateLedgerFilters()">
+        <option value="all">all</option>
+        <option value="sale">sales</option>
+        <option value="spending">spendings</option>
+      </select>
+    </label>
+
+    <label class="filter-field">
+      <span>source</span>
+      <select [(ngModel)]="ledgerSourceFilter" (ngModelChange)="updateLedgerFilters()">
+        <option value="all">all sources</option>
+        <option value="system">system / POS</option>
+        <option value="system-cash">system / cash</option>
+        <option value="system-gcash">system / gcash</option>
+        <option value="system-maya">system / maya</option>
+        <option value="manual">manual</option>
+      </select>
+    </label>
+
+    <label class="filter-field">
+      <span>category</span>
+      <select [(ngModel)]="ledgerCategoryFilter" (ngModelChange)="updateLedgerFilters()">
+        <option value="all">all categories</option>
+        <option *ngFor="let category of entryCategories" [value]="category">{{ category }}</option>
+      </select>
+    </label>
+
+    <button type="button" class="clear-filters" (click)="clearLedgerFilters()">clear filters</button>
+  </section>
+
+  <div class="finance-detail-grid">
+    <section class="category-breakdown" *ngIf="topCategories.length > 0">
+      <header>
+        <div>
+          <h2>Top Spending Categories</h2>
+          <p>See where manual finance entries are accumulating for the selected period.</p>
+        </div>
+      </header>
+
+      <div class="category-cards">
+        <article *ngFor="let category of topCategories">
+          <h3>{{ category.category }}</h3>
+          <p>₱{{ category.amount | number: '1.2-2' }}</p>
+          <span>{{ category.count }} entr{{ category.count === 1 ? 'y' : 'ies' }}</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="sales-note">
+      <h2>How sales are tracked</h2>
+      <p>Keep Finance for the raw ledger: manual spendings such as rent, utilities, payroll, and tax entries belong here, together with manual sales adjustments. Keep Reports for analytics, dashboards, and exports. Gross sales come from paid orders before discounts, while net sales come from final paid totals after discounts.</p>
+    </section>
+  </div>
+
+  <section class="ledger-table-card">
+    <header class="ledger-head">
+      <div>
+        <h2>Finance Ledger</h2>
+        <p>Filtered transaction view for the selected period.</p>
+      </div>
+      <span class="entry-count">{{ filteredEntries.length }} matching entr{{ filteredEntries.length === 1 ? 'y' : 'ies' }}</span>
+    </header>
+
+    <div class="empty-state" *ngIf="periodEntries.length === 0">
+      no finance entries for this period.
+    </div>
+
+    <div class="empty-state" *ngIf="periodEntries.length > 0 && filteredEntries.length === 0">
+      no finance entries match the current filters.
+    </div>
+
+    <div class="ledger-mobile-cards" *ngIf="pagedEntries.length > 0">
+      <article class="ledger-mobile-card" *ngFor="let entry of pagedEntries">
+        <ng-container *ngIf="editingEntryId !== entry.id; else editCard">
+          <div class="mobile-card-grid">
+            <div>
+              <span>date</span>
+              <strong>{{ entry.createdAt | date: 'mediumDate' }}</strong>
+            </div>
+            <div>
+              <span>type</span>
+              <strong>{{ entry.type }}</strong>
+            </div>
+            <div>
+              <span>source</span>
+              <strong>{{ entrySourceLabel(entry) }}</strong>
+            </div>
+            <div>
+              <span>category</span>
+              <strong>{{ entry.category }}</strong>
+            </div>
+            <div class="full-width">
+              <span>note</span>
+              <strong>{{ entry.note }}</strong>
+            </div>
+            <div>
+              <span>amount</span>
+              <strong [class.spending]="entry.type === 'spending'" [class.sale]="entry.type === 'sale'">
+                {{ entry.type === 'spending' ? '-' : '+' }}₱{{ entry.amount | number: '1.2-2' }}
+              </strong>
+            </div>
+          </div>
+          <div class="row-actions">
+            <button type="button" (click)="startEdit(entry)">edit</button>
+            <button type="button" class="danger" (click)="deleteEntry(entry.id)">delete</button>
+          </div>
+        </ng-container>
+
+        <ng-template #editCard>
+          <div class="mobile-edit-grid">
+            <label>
+              date
+              <input #editDate type="date" [value]="entry.createdAt | date: 'yyyy-MM-dd'" />
+            </label>
+            <label>
+              type
+              <select #editType>
+                <option value="sale" [selected]="entry.type === 'sale'">sale</option>
+                <option value="spending" [selected]="entry.type === 'spending'">spending</option>
+              </select>
+            </label>
+            <label>
+              category
+              <input #editCategory type="text" [value]="entry.category" />
+            </label>
+            <label>
+              amount
+              <input #editAmount type="number" min="0.01" step="0.01" [value]="entry.amount" />
+            </label>
+            <label class="full-width">
+              note
+              <input #editNote type="text" [value]="entry.note" />
+            </label>
+          </div>
+          <div class="row-actions">
+            <button
+              type="button"
+              (click)="saveEntry(entry.id, editType.value, editAmount.valueAsNumber, editNote.value, editCategory.value, editDate.value)"
+            >
+              save
+            </button>
+            <button type="button" (click)="cancelEdit()">cancel</button>
+          </div>
+        </ng-template>
+      </article>
+    </div>
+
+    <div class="table-scroll" *ngIf="pagedEntries.length > 0">
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Source</th>
+            <th>Category</th>
+            <th>Note</th>
+            <th>Amount</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let entry of pagedEntries">
+            <ng-container *ngIf="editingEntryId !== entry.id; else editRow">
+              <td>{{ entry.createdAt | date: 'mediumDate' }}</td>
+              <td>{{ entry.type }}</td>
+              <td>{{ entrySourceLabel(entry) }}</td>
+              <td>{{ entry.category }}</td>
+              <td>{{ entry.note }}</td>
+              <td [class.spending]="entry.type === 'spending'" [class.sale]="entry.type === 'sale'">
+                {{ entry.type === 'spending' ? '-' : '+' }}₱{{ entry.amount | number: '1.2-2' }}
+              </td>
+              <td class="row-actions">
+                <button type="button" (click)="startEdit(entry)">edit</button>
+                <button type="button" class="danger" (click)="deleteEntry(entry.id)">delete</button>
+              </td>
+            </ng-container>
+            <ng-template #editRow>
+              <td><input #editDate type="date" [value]="entry.createdAt | date: 'yyyy-MM-dd'" /></td>
+              <td>
+                <select #editType>
+                  <option value="sale" [selected]="entry.type === 'sale'">sale</option>
+                  <option value="spending" [selected]="entry.type === 'spending'">spending</option>
+                </select>
+              </td>
+              <td>{{ entrySourceLabel(entry) }}</td>
+              <td><input #editCategory type="text" [value]="entry.category" /></td>
+              <td><input #editNote type="text" [value]="entry.note" /></td>
+              <td><input #editAmount type="number" min="0.01" step="0.01" [value]="entry.amount" /></td>
+              <td class="row-actions">
+                <button
+                  type="button"
+                  (click)="saveEntry(entry.id, editType.value, editAmount.valueAsNumber, editNote.value, editCategory.value, editDate.value)"
+                >
+                  save
+                </button>
+                <button type="button" (click)="cancelEdit()">cancel</button>
+              </td>
+            </ng-template>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-pager" *ngIf="filteredEntries.length > pageSize">
+      <button type="button" (click)="setLedgerPage(ledgerPage - 1)" [disabled]="ledgerPage === 1">previous</button>
+      <span>page {{ ledgerPage }} of {{ ledgerTotalPages }}</span>
+      <button type="button" (click)="setLedgerPage(ledgerPage + 1)" [disabled]="ledgerPage === ledgerTotalPages">next</button>
+    </div>
+  </section>
+</section>

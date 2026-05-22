@@ -1,0 +1,193 @@
+<div class="template-management">
+  <div class="templates-header">
+    <h2>Checklist Templates</h2>
+    <button class="btn-primary" (click)="createNewTemplate()">+ New Template</button>
+  </div>
+
+  <div class="templates-container">
+    <!-- Templates List -->
+    <div class="templates-list">
+      <div class="list-header">
+        <h3>Available Templates</h3>
+        <span class="count">{{ templates.length }} templates</span>
+      </div>
+
+      <div *ngIf="templates.length === 0" class="empty-state">
+        <p>No templates yet. Create one to get started.</p>
+      </div>
+
+      <div class="templates-grid">
+        <div
+          *ngFor="let template of templates"
+          class="template-card"
+          [class.active]="selectedTemplate?.id === template.id"
+          (click)="selectTemplate(template)"
+        >
+          <div class="card-header">
+            <h4>{{ template.name }}</h4>
+            <span class="item-count">{{ template.items.length }} items</span>
+          </div>
+          <p class="description">{{ template.description }}</p>
+          <div class="card-footer">
+            <small>{{ template.items.length }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Template Details & Editor -->
+    <div class="template-details">
+      <div *ngIf="!showForm && !selectedTemplate" class="no-selection">
+        <p>Select a template or create a new one</p>
+      </div>
+
+      <!-- New/Edit Template Form -->
+      <div *ngIf="showForm" class="form-section">
+        <h3>{{ selectedTemplate ? 'Edit' : 'Create' }} Template</h3>
+        <form [formGroup]="templateForm" (ngSubmit)="selectedTemplate ? updateTemplate() : saveTemplate()">
+          <div class="form-group">
+            <label for="name">Template Name</label>
+            <input
+              id="name"
+              type="text"
+              formControlName="name"
+              placeholder="e.g., Workshop Setup"
+              class="input"
+            />
+            <span class="error" *ngIf="templateForm.get('name')?.hasError('required')">
+              Template name is required
+            </span>
+            <span class="error" *ngIf="templateForm.get('name')?.hasError('minlength')">
+              Name must be at least 3 characters
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea
+              id="description"
+              formControlName="description"
+              placeholder="Describe what this template is used for"
+              class="input textarea"
+              rows="3"
+            ></textarea>
+            <span class="error" *ngIf="templateForm.get('description')?.hasError('required')">
+              Description is required
+            </span>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" [disabled]="templateForm.invalid">
+              {{ selectedTemplate ? 'Update' : 'Create' }} Template
+            </button>
+            <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Template Details -->
+      <div *ngIf="selectedTemplate && !showForm" class="template-info">
+        <div class="info-header">
+          <h3>{{ selectedTemplate.name }}</h3>
+          <div class="actions">
+            <button class="btn-secondary" (click)="editTemplate()">Edit</button>
+            <button class="btn-danger" (click)="deleteTemplate(selectedTemplate)">Delete</button>
+          </div>
+        </div>
+
+        <p class="description">{{ selectedTemplate.description }}</p>
+
+        <div class="items-section">
+          <div class="items-header">
+            <h4>Checklist Items</h4>
+            <button class="btn-primary" (click)="addItem()">+ Add Item</button>
+          </div>
+
+          <div *ngIf="selectedTemplate.items.length === 0" class="empty-items">
+            <p>No items in this template yet. Add items to get started.</p>
+          </div>
+
+          <!-- Add/Edit Item Form -->
+          <div *ngIf="showItemForm" class="form-section item-form">
+            <h4>{{ editingItemId ? 'Edit' : 'Add' }} Item</h4>
+            <form [formGroup]="itemForm" (ngSubmit)="saveItem()">
+              <div class="form-group">
+                <label for="item-name">Item Name</label>
+                <input
+                  id="item-name"
+                  type="text"
+                  formControlName="name"
+                  placeholder="e.g., Chasen (Whisk)"
+                  class="input"
+                />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="category">Category</label>
+                  <select id="category" formControlName="category" class="input">
+                    <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="quantity">Quantity</label>
+                  <input
+                    id="quantity"
+                    type="number"
+                    formControlName="quantityNeeded"
+                    min="1"
+                    class="input"
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea
+                  id="notes"
+                  formControlName="notes"
+                  placeholder="Add any notes about this item"
+                  class="input textarea"
+                  rows="2"
+                ></textarea>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-primary" [disabled]="itemForm.invalid">
+                  {{ editingItemId ? 'Update' : 'Add' }} Item
+                </button>
+                <button type="button" class="btn-secondary" (click)="cancelItemEdit()">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Items List -->
+          <div *ngIf="!showItemForm && selectedTemplate.items.length > 0" class="items-list">
+            <div *ngFor="let item of selectedTemplate.items" class="item-row">
+              <div class="item-content">
+                <div class="item-main">
+                  <h5>{{ item.name }}</h5>
+                  <span
+                    class="category-badge"
+                    [style.background-color]="getItemCategoryColor(item.category)"
+                  >
+                    {{ item.category }}
+                  </span>
+                </div>
+                <div class="item-details">
+                  <span class="quantity">Qty: <strong>{{ item.quantityNeeded }}</strong></span>
+                  <span *ngIf="item.notes" class="notes">{{ item.notes }}</span>
+                </div>
+              </div>
+              <div class="item-actions">
+                <button class="btn-sm btn-secondary" (click)="editItem(item)">Edit</button>
+                <button class="btn-sm btn-danger" (click)="deleteItem(item)">Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

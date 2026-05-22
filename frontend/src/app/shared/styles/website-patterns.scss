@@ -1,0 +1,89 @@
+@mixin page-title {
+  margin-bottom: 0.75rem;
+  color: #1a1a1a;
+  font-size: 1.6rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: lowercase;
+}
+
+@mixin intro-copy {
+  margin: 0;
+  color: #6b665e;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  text-transform: lowercase;
+}
+
+@mixin eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+@mixin section-rule {
+  background: transparent;
+  border-top: 1px solid rgba(26, 26, 26, 0.18);
+  border-bottom: 1px solid rgba(26, 26, 26, 0.11);
+  padding: 1.15rem 0 1rem;
+}
+
+@mixin panel-label {
+  margin: 0 0 0.95rem;
+  color: #6b665e;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@mixin tab-button {
+  border: none;
+  border-radius: 0;
+  padding: 0.45rem 0;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font: inherit;
+  text-transform: lowercase;
+  transition: color 150ms ease, border-color 150ms ease;
+  border-bottom: var(--active-underline-width) solid transparent;
+}
+
+@mixin tab-button-active {
+  color: var(--active-text);
+  font-weight: var(--active-weight);
+  border-bottom: var(--active-underline-width) solid var(--active-underline-color);
+}
+
+@mixin field-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b665e;
+}
+
+@mixin field-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.16);
+  border-radius: 0;
+  padding: 0.85rem 0 0.7rem;
+  background: transparent;
+  color: #1a1a1a;
+  font: inherit;
+  text-transform: lowercase;
+}
+
+@mixin field-input-focus {
+  outline: none;
+  border-color: rgba(47, 93, 80, 0.45);
+  box-shadow: none;
+}
+
+@mixin feedback {
+  margin: 1rem 0 0;
+  font-size: 0.88rem;
+  text-transform: lowercase;
+}

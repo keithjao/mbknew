@@ -1,0 +1,274 @@
+.admin-section {
+  background: rgba(250, 248, 244, 0.94);
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(26, 26, 26, 0.05), 0 1px 3px rgba(139, 115, 85, 0.07);
+  padding: 28px 30px;
+  margin-bottom: 20px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid rgba(139, 115, 85, 0.13);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.admin-section h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 10px;
+  text-transform: lowercase;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.admin-section h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 14px;
+  text-transform: lowercase;
+  letter-spacing: -0.02em;
+}
+
+.admin-section h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 10px;
+  text-transform: lowercase;
+}
+
+.admin-section p {
+  color: #666056;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.65;
+}
+
+.admin-section a {
+  color: #8B7355;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(139, 115, 85, 0.3);
+  transition: all 0.15s;
+
+  &:hover {
+    color: #5a4a32;
+    border-bottom-color: #8B7355;
+  }
+}
+
+// Form Elements
+.admin-section input[type='text'],
+.admin-section input[type='email'],
+.admin-section input[type='password'],
+.admin-section input[type='number'],
+.admin-section input[type='date'],
+.admin-section input[type='time'],
+.admin-section textarea,
+.admin-section select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid rgba(139, 115, 85, 0.2);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: #fff;
+  color: #1a1a1a;
+  transition: border-color 150ms, box-shadow 150ms;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(139, 115, 85, 0.5);
+    box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.09);
+  }
+
+  &:disabled {
+    background: rgba(139, 115, 85, 0.05);
+    color: #a09680;
+    cursor: not-allowed;
+  }
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+// Tables
+.admin-section table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 0.86rem;
+
+  thead {
+    background: rgba(139, 115, 85, 0.06);
+    border-bottom: 1px solid rgba(139, 115, 85, 0.16);
+
+    th {
+      padding: 11px 14px;
+      text-align: left;
+      font-weight: 700;
+      color: #8B7355;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.07em;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid rgba(139, 115, 85, 0.08);
+      transition: background 0.15s;
+
+      &:hover {
+        background: rgba(139, 115, 85, 0.04);
+      }
+
+      td {
+        padding: 11px 14px;
+        color: #3a3530;
+      }
+    }
+  }
+}
+
+// Buttons
+.admin-section .btn,
+.admin-section button {
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  text-transform: lowercase;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  &:focus {
+    outline: 2px solid rgba(139, 115, 85, 0.4);
+    outline-offset: 2px;
+  }
+}
+
+.admin-section .btn-primary,
+.admin-section .btn:not([class*='btn-']) {
+  background: #1a1a1a;
+  color: #f5f2ed;
+  border-color: rgba(26, 26, 26, 0.1);
+
+  &:hover:not(:disabled) {
+    background: #2d2d2d;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(26, 26, 26, 0.18);
+  }
+}
+
+.admin-section .btn-secondary {
+  background: rgba(139, 115, 85, 0.08);
+  color: #4a3f35;
+  border-color: rgba(139, 115, 85, 0.18);
+
+  &:hover:not(:disabled) {
+    background: rgba(139, 115, 85, 0.14);
+  }
+}
+
+.admin-section .btn-success {
+  background: rgba(47, 93, 80, 0.1);
+  color: #256c41;
+  border-color: rgba(47, 93, 80, 0.2);
+
+  &:hover:not(:disabled) {
+    background: rgba(47, 93, 80, 0.18);
+  }
+}
+
+.admin-section .btn-danger {
+  background: rgba(161, 77, 77, 0.08);
+  color: #8f3f3f;
+  border-color: rgba(161, 77, 77, 0.2);
+
+  &:hover:not(:disabled) {
+    background: rgba(161, 77, 77, 0.15);
+  }
+}
+
+.admin-section .btn-warning {
+  background: rgba(200, 140, 40, 0.1);
+  color: #7a5a10;
+  border-color: rgba(200, 140, 40, 0.2);
+
+  &:hover:not(:disabled) {
+    background: rgba(200, 140, 40, 0.18);
+  }
+}
+
+// Status badges
+.admin-section .badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &.badge-primary {
+    background: rgba(53, 92, 182, 0.1);
+    color: #355cb6;
+  }
+
+  &.badge-success {
+    background: rgba(47, 93, 80, 0.1);
+    color: #256c41;
+  }
+
+  &.badge-danger {
+    background: rgba(161, 77, 77, 0.1);
+    color: #8f3f3f;
+  }
+
+  &.badge-warning {
+    background: rgba(200, 140, 40, 0.12);
+    color: #7a5a10;
+  }
+
+  &.badge-info {
+    background: rgba(80, 140, 160, 0.1);
+    color: #2a6a7a;
+  }
+}
+
+// Loading state
+.admin-section .loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.admin-section .empty-state {
+  text-align: center;
+  padding: 50px 20px;
+  color: #a09688;
+
+  p {
+    margin: 8px 0;
+    font-size: 0.88rem;
+    color: #a09688;
+  }
+}

@@ -1,0 +1,17 @@
+<div class="page-container">
+  <section class="merchandise-page" aria-label="merchandise coming soon">
+    <h1>merchandise</h1>
+    <p class="merchandise-intro">our curated merchandise line is in progress. here is a preview of what is arriving next.</p>
+
+    <div class="merchandise-list">
+      <article class="merch-item" *ngFor="let item of placeholders">
+        <div class="merch-item__head">
+          <h2>{{ item.name }}</h2>
+          <span class="status" [class.status--preview]="item.status === 'preview'">{{ item.status }}</span>
+        </div>
+        <p class="merch-item__note">{{ item.note }}</p>
+        <p class="merch-item__eta">{{ item.eta }}</p>
+      </article>
+    </div>
+  </section>
+</div>

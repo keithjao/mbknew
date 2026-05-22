@@ -1,0 +1,160 @@
+<section class="admin-access-page">
+  <div class="admin-access-card" *ngIf="!hasMasterAdminSession && !hasStaffWorkspaceSession; else activeSessionCard">
+    <p class="access-eyebrow">internal access</p>
+    <h1>choose how you want to sign in</h1>
+    <p class="access-copy">
+      master admin controls setup and staff accounts. staff workspace access now uses a separate username and strong password, while clock-in still uses staff code and pin.
+    </p>
+
+    <div class="auth-switcher">
+      <button type="button" [class.active]="authMode === 'master'" (click)="openAuthMode('master')">master admin</button>
+      <button type="button" [class.active]="authMode === 'staff'" (click)="openAuthMode('staff')">staff workspace</button>
+    </div>
+
+    <ng-container *ngIf="authMode === 'master'; else staffSignInCard">
+      <div class="setup-credential" *ngIf="bootstrapCredentials as credentials">
+        <strong>bootstrap master credential</strong>
+        <p>username: {{ credentials.username }}</p>
+        <p>temporary password: {{ credentials.password }}</p>
+        <button type="button" class="secondary" (click)="useBootstrapCredentials()">use these credentials</button>
+      </div>
+
+      <form class="access-form" (submit)="signIn(); $event.preventDefault()">
+        <label>
+          <span>username</span>
+          <input [(ngModel)]="username" name="username" type="text" autocomplete="username" placeholder="admin" />
+        </label>
+        <label>
+          <span>password</span>
+          <input [(ngModel)]="password" name="password" type="password" autocomplete="current-password" placeholder="enter master admin password" />
+        </label>
+        <button type="submit" [disabled]="!username.trim() || !password.trim()">sign in</button>
+      </form>
+    </ng-container>
+
+    <ng-template #staffSignInCard>
+      <form class="access-form" (submit)="signInStaff(); $event.preventDefault()">
+        <label>
+          <span>workspace username</span>
+          <input [(ngModel)]="staffUsername" name="staffUsername" type="text" autocomplete="username" placeholder="juan.delacruz" />
+        </label>
+        <label>
+          <span>password</span>
+          <input [(ngModel)]="staffPassword" name="staffPassword" type="password" autocomplete="current-password" placeholder="enter staff workspace password" />
+        </label>
+        <button type="submit" [disabled]="!staffUsername.trim() || !staffPassword.trim()">sign in</button>
+      </form>
+    </ng-template>
+
+    <p *ngIf="feedback" class="access-feedback" [class.success]="feedbackTone === 'success'" [class.error]="feedbackTone === 'error'">{{ feedback }}</p>
+
+    <div class="access-note">
+      <strong>gmail recovery</strong>
+      <p>not live yet. forgot-password through gmail needs a backend plus a secure email provider before it can be trusted.</p>
+    </div>
+
+    <div class="access-note reset-note">
+      <strong>fresh start</strong>
+      <p>this reset clears the app data stored in local PostgreSQL through the backend, plus any leftover browser migration data.</p>
+      <div class="recovery-actions">
+        <button type="button" class="danger-action" (click)="restoreBootstrapAdmin()">restore bootstrap admin</button>
+        <button type="button" class="danger-action" (click)="resetLocalData()">reset PostgreSQL app data</button>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #activeSessionCard>
+    <div class="admin-access-card">
+      <ng-container *ngIf="hasMasterAdminSession; else staffSessionCard">
+        <ng-container *ngIf="requiresPasswordChange; else unlockedAdminCard">
+          <p class="access-eyebrow">master admin setup</p>
+          <h1>change the bootstrap password</h1>
+          <p class="access-copy">
+            your temporary password only unlocks this setup step. choose a new password with uppercase, lowercase, a number, and a symbol.
+          </p>
+
+          <form class="access-form" (submit)="updatePassword(); $event.preventDefault()">
+            <label>
+              <span>new password</span>
+              <input [(ngModel)]="newPassword" name="newPassword" type="password" autocomplete="new-password" placeholder="create a secure password" />
+            </label>
+            <label>
+              <span>confirm new password</span>
+              <input [(ngModel)]="confirmNewPassword" name="confirmNewPassword" type="password" autocomplete="new-password" placeholder="repeat the new password" />
+            </label>
+            <button type="submit" [disabled]="!newPassword || !confirmNewPassword">save new password</button>
+          </form>
+
+          <p *ngIf="feedback" class="access-feedback" [class.success]="feedbackTone === 'success'" [class.error]="feedbackTone === 'error'">{{ feedback }}</p>
+
+          <div class="access-actions">
+            <button type="button" class="secondary" (click)="signOut()">sign out</button>
+          </div>
+        </ng-container>
+
+        <ng-template #unlockedAdminCard>
+          <p class="access-eyebrow">master admin session</p>
+          <h1>{{ adminSession.actingStaffName }}</h1>
+          <p class="access-copy">
+            full admin tools are now available in the sidebar. staff workspace access uses separate credentials created in hr.
+          </p>
+
+          <div class="access-actions">
+            <a [routerLink]="workspaceRoute">open workspace</a>
+            <button type="button" class="secondary" (click)="signOut()">sign out</button>
+          </div>
+
+          <p *ngIf="feedback" class="access-feedback" [class.success]="feedbackTone === 'success'" [class.error]="feedbackTone === 'error'">{{ feedback }}</p>
+        </ng-template>
+      </ng-container>
+
+      <ng-template #staffSessionCard>
+        <ng-container *ngIf="requiresStaffPasswordChange; else unlockedStaffCard">
+          <p class="access-eyebrow">staff workspace setup</p>
+          <h1>change your temporary password</h1>
+          <p class="access-copy">
+            the master admin created a temporary password for this staff workspace account. change it now before using internal tools.
+          </p>
+
+          <form class="access-form" (submit)="updateStaffPassword(); $event.preventDefault()">
+            <label>
+              <span>new password</span>
+              <input [(ngModel)]="staffNewPassword" name="staffNewPassword" type="password" autocomplete="new-password" placeholder="create a secure password" />
+            </label>
+            <label>
+              <span>confirm new password</span>
+              <input [(ngModel)]="staffConfirmNewPassword" name="staffConfirmNewPassword" type="password" autocomplete="new-password" placeholder="repeat the new password" />
+            </label>
+            <button type="submit" [disabled]="!staffNewPassword || !staffConfirmNewPassword">save new password</button>
+          </form>
+
+          <p *ngIf="feedback" class="access-feedback" [class.success]="feedbackTone === 'success'" [class.error]="feedbackTone === 'error'">{{ feedback }}</p>
+
+          <div class="access-actions">
+            <button type="button" class="secondary" (click)="signOutStaff()">sign out</button>
+          </div>
+        </ng-container>
+
+        <ng-template #unlockedStaffCard>
+          <p class="access-eyebrow">{{ isSignedInStaffAdmin ? 'admin workspace session' : 'staff workspace session' }}</p>
+          <h1>{{ appSession.actingStaffName }}</h1>
+          <p class="access-copy">
+            <ng-container *ngIf="isSignedInStaffAdmin; else staffCopy">
+              signed in as {{ signedInStaff?.workspaceUsername }} with admin tools enabled.
+            </ng-container>
+            <ng-template #staffCopy>
+              signed in as {{ signedInStaff?.workspaceUsername }}. your short staff pin stays separate for clock-in and kiosk use.
+            </ng-template>
+          </p>
+
+          <div class="access-actions">
+            <a [routerLink]="workspaceRoute">open workspace</a>
+            <button type="button" class="secondary" (click)="signOutStaff()">sign out</button>
+          </div>
+
+          <p *ngIf="feedback" class="access-feedback" [class.success]="feedbackTone === 'success'" [class.error]="feedbackTone === 'error'">{{ feedback }}</p>
+        </ng-template>
+      </ng-template>
+    </div>
+  </ng-template>
+</section>

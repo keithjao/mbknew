@@ -1,0 +1,520 @@
+// Global Application Styles
+// Matcha By Kamo - Minimalist Design System
+
+// Color Tokens
+:root {
+  --surface: #e3e1dc;
+  --surface-strong: #d7d4ce;
+  --surface-deep: #c9c5be;
+  --card: rgba(226, 224, 218, 0.9);
+  --card-strong: #dbd8d2;
+  --ink: #1a1a1a;
+  --ink-soft: #666056;
+  --line: rgba(26, 26, 26, 0.08);
+  --accent: #2f5d50;
+  --accent-soft: #e8eeeb;
+  --warm: #c8a97e;
+
+  /* Shared active/selected treatment */
+  --active-text: #1a1a1a;
+  --active-weight: 700;
+  --active-underline-color: #2f5d50;
+  --active-underline-width: 1.5px;
+}
+
+// CSS Reset
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// Root Element
+html, body {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background:
+    radial-gradient(circle at 15% 12%, rgba(255, 255, 255, 0.28), transparent 34%),
+    radial-gradient(circle at 84% 20%, rgba(255, 255, 255, 0.18), transparent 40%),
+    radial-gradient(circle at 24% 76%, rgba(185, 178, 168, 0.16), transparent 46%),
+    linear-gradient(180deg, #ebe9e4 0%, var(--surface) 50%, #d8d4ce 100%);
+  background-attachment: fixed;
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      115deg,
+      rgba(255, 255, 255, 0.03) 0,
+      rgba(255, 255, 255, 0.03) 2px,
+      rgba(201, 195, 184, 0.018) 2px,
+      rgba(201, 195, 184, 0.018) 8px
+    ),
+    repeating-linear-gradient(
+      20deg,
+      rgba(161, 154, 144, 0.014) 0,
+      rgba(161, 154, 144, 0.014) 3px,
+      transparent 3px,
+      transparent 11px
+    );
+  mix-blend-mode: multiply;
+  opacity: 0.48;
+  z-index: -1;
+}
+
+.pos-page .pos-secondary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.pos-page .wastage-panel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Panel header stats row */
+.pos-page .wastage-panel .waste-header-stats {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.pos-page .wastage-panel .panel-copy,
+.pos-page .wastage-panel .wastage-card-note,
+.pos-page .wastage-panel .waste-meta-row,
+.pos-page .wastage-panel .waste-charged-info {
+  color: #6f6a62;
+  font-size: 12px;
+}
+
+.pos-page .wastage-panel .panel-copy {
+  margin: 4px 0 0;
+}
+
+.pos-page .wastage-panel .count-pill,
+.pos-page .wastage-panel .item-tag {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(139, 115, 85, 0.12);
+  color: #6f5d46;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pos-page .wastage-panel .open-pill {
+  background: rgba(176, 58, 46, 0.1);
+  color: #b03a2e;
+}
+
+/* Layout */
+.pos-page .wastage-panel .wastage-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* Form */
+.pos-page .wastage-panel .wastage-form {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 16px;
+  background: #faf9f7;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pos-page .wastage-panel .waste-form-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pos-page .wastage-panel .waste-form-header strong {
+  display: block;
+  font-size: 14px;
+  color: #2d2419;
+}
+
+.pos-page .wastage-panel .waste-form-header p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #8a7d6a;
+}
+
+.pos-page .wastage-panel .waste-icon {
+  font-size: 20px;
+  line-height: 1.2;
+  color: #b87333;
+  flex-shrink: 0;
+}
+
+.pos-page .wastage-panel .waste-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pos-page .wastage-panel .waste-field-group label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5d4e3a;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.pos-page .wastage-panel .field-optional {
+  font-weight: 400;
+  color: #aaa;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.pos-page .wastage-panel .waste-field-row {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 10px;
+}
+
+.pos-page .wastage-panel .btn-waste-log {
+  display: block;
+  width: 100%;
+  padding: 11px;
+  background: #8B7355;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-top: 2px;
+}
+
+.pos-page .wastage-panel .btn-waste-log:hover {
+  background: #7a6349;
+}
+
+.pos-page .wastage-panel .btn-waste-log:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Records */
+.pos-page .wastage-panel .wastage-records {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 14px;
+  background: #faf9f7;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pos-page .wastage-panel .waste-filter-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pos-page .wastage-panel .filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid #e0dbd3;
+  border-radius: 999px;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: #777;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pos-page .wastage-panel .filter-pill:hover {
+  border-color: #8B7355;
+  color: #5d4f3c;
+}
+
+.pos-page .wastage-panel .filter-pill.active {
+  background: #8B7355;
+  color: white;
+  border-color: #8B7355;
+}
+
+.pos-page .wastage-panel .filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(139, 115, 85, 0.14);
+  color: #6f5d46;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pos-page .wastage-panel .filter-pill.active .filter-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.pos-page .wastage-panel .filter-count.open-count {
+  background: rgba(176, 58, 46, 0.12);
+  color: #b03a2e;
+}
+
+.pos-page .wastage-panel .wastage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  max-height: 480px;
+
+  scrollbar-width: thin;
+  scrollbar-color: #ddd #f5f5f5;
+}
+
+/* Waste card */
+.pos-page .wastage-panel .wastage-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-left: 3px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pos-page .wastage-panel .wastage-card.card-open {
+  border-left-color: #e67e22;
+}
+
+.pos-page .wastage-panel .wastage-card.card-charged {
+  border-left-color: #bbb;
+  background: #fafafa;
+}
+
+.pos-page .wastage-panel .waste-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pos-page .wastage-panel .waste-item-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pos-page .wastage-panel .waste-item-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.pos-page .wastage-panel .waste-qty-badge {
+  display: inline-flex;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(139, 115, 85, 0.14);
+  color: #6f5d46;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pos-page .wastage-panel .waste-status-badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pos-page .wastage-panel .waste-status-badge.status-open {
+  background: rgba(230, 126, 34, 0.12);
+  color: #b87333;
+}
+
+.pos-page .wastage-panel .waste-status-badge.status-charged {
+  background: rgba(76, 175, 80, 0.12);
+  color: #2e7d32;
+}
+
+.pos-page .wastage-panel .waste-reason-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  background: #f1ede8;
+  color: #6f6a62;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pos-page .wastage-panel .wastage-card-note {
+  font-style: italic;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.pos-page .wastage-panel .waste-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.pos-page .wastage-panel .waste-assign-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px dashed #e8e2da;
+}
+
+.pos-page .wastage-panel .btn-charge {
+  padding: 8px 14px;
+  background: #8B7355;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+
+.pos-page .wastage-panel .btn-charge:hover {
+  background: #7a6349;
+}
+
+.pos-page .wastage-panel .btn-charge:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.pos-page .wastage-panel .waste-charged-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #6f6a62;
+  padding-top: 6px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.pos-page .wastage-panel .waste-charged-info strong {
+  color: #333;
+}
+
+/* Inputs */
+.pos-page .wastage-panel .wastage-select,
+.pos-page .wastage-panel .wastage-input,
+.pos-page .wastage-panel .wastage-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.pos-page .wastage-panel .wastage-select.compact {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.pos-page .wastage-panel .wastage-select:focus,
+.pos-page .wastage-panel .wastage-input:focus,
+.pos-page .wastage-panel .wastage-textarea:focus {
+  outline: none;
+  border-color: #8B7355;
+}
+
+.pos-page .wastage-panel .wastage-textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+app-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+// Scrollbar Styling
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(26, 26, 26, 0.2);
+  border-radius: 4px;
+
+  &:hover {
+    background: rgba(26, 26, 26, 0.4);
+  }
+}
+
+@media (max-width: 1200px) {
+  .pos-page .pos-secondary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .pos-page .wastage-panel {
+    padding: 16px;
+  }
+
+  .pos-page .wastage-panel .wastage-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pos-page .wastage-panel .waste-field-row {
+    grid-template-columns: 80px 1fr;
+  }
+
+  .pos-page .wastage-panel .waste-assign-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pos-page .wastage-panel .wastage-select.compact {
+    min-width: 0;
+  }
+}

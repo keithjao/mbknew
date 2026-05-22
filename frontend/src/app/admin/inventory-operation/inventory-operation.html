@@ -1,0 +1,324 @@
+<section class="admin-section store-inventory">
+  <div class="section-header">
+    <h1>{{ displayTitle }} Inventory</h1>
+    <p>Manage daily {{ inventoryLabel }} inventory - pull items from master, track usage, and return remaining items.</p>
+  </div>
+
+  <div *ngIf="feedback" class="feedback-message" [class.success]="feedback.includes('success') || feedback.includes('successfully')">
+    {{ feedback }}
+  </div>
+
+  <div class="tab-nav">
+    <button type="button" (click)="activeTab = 'overview'" class="tab-btn" [class.active]="activeTab === 'overview'">
+      <span class="tab-icon">📊</span>
+      OVERVIEW
+    </button>
+    <button type="button" (click)="activeTab = 'pull'" class="tab-btn" [class.active]="activeTab === 'pull'">
+      <span class="tab-icon">📦</span>
+      PULL
+    </button>
+    <button type="button" (click)="activeTab = 'logs'" class="tab-btn" [class.active]="activeTab === 'logs'">
+      <span class="tab-icon">📋</span>
+      LOGS
+    </button>
+  </div>
+
+  <div *ngIf="activeTab === 'overview'" class="tab-content">
+    <div class="overview-grid">
+      <div class="card operation-status">
+        <h2>Today's {{ displayTitle }} Operation</h2>
+
+        <div *ngIf="!todaysOperation" class="no-operation">
+          <p class="status-badge closed">CLOSED</p>
+          <p>No active {{ inventoryLabel }} operation today. Pull items to open an operation.</p>
+        </div>
+
+        <div *ngIf="todaysOperation" class="operation-active">
+          <p class="status-badge open">OPEN</p>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Opened</label>
+              <span>{{ todaysOperation.openedAt | date:'short' }}</span>
+            </div>
+            <div class="info-item">
+              <label>By</label>
+              <span>{{ todaysOperation.openedBy }}</span>
+            </div>
+            <div class="info-item">
+              <label>Items</label>
+              <span class="badge">{{ todaysOperation.items.length }}</span>
+            </div>
+            <div class="info-item">
+              <label>Starting Cash</label>
+              <span class="amount">₱{{ operationStartingCash | number:'1.2-2' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Cash Sales</label>
+              <span class="amount">₱{{ operationCashSales | number:'1.2-2' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Expected Cash</label>
+              <span class="amount">₱{{ expectedClosingCash | number:'1.2-2' }}</span>
+            </div>
+            <div *ngIf="showOperationTotalValue" class="info-item">
+              <label>Total Value</label>
+              <span class="amount">₱{{ getOperationValue(todaysOperation) | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="todaysOperation" class="card inventory-list">
+        <h2>Current Inventory</h2>
+        <div class="items-table">
+          <div class="table-header">
+            <div class="col-name">Item</div>
+            <div class="col-qty">Qty</div>
+            <div class="col-unit">Unit</div>
+            <div class="col-value">Value</div>
+            <div class="col-action">Action</div>
+          </div>
+          <div *ngFor="let item of pagedOperationItems" class="table-row">
+            <div class="col-name">{{ item.name }}</div>
+            <div class="col-qty">{{ item.currentQuantity }}</div>
+            <div class="col-unit">{{ item.unit }}</div>
+            <div class="col-value">₱{{ (item.currentQuantity * item.unitCost) | number:'1.2-2' }}</div>
+            <div class="col-action">
+              <input
+                type="number"
+                min="1"
+                max="{{ item.currentQuantity }}"
+                class="input-qty"
+                #qtyInput
+                placeholder="Qty">
+              <button class="btn-small deduct" type="button" (click)="deductItem(item.id, +qtyInput.value); qtyInput.value = ''">
+                -
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-pager" *ngIf="todaysOperation.items.length > pageSize">
+          <button type="button" class="btn btn-secondary" [disabled]="currentInventoryPage === 1" (click)="setCurrentInventoryPage(currentInventoryPage - 1)">previous</button>
+          <span>page {{ currentInventoryPage }} of {{ operationItemsTotalPages }}</span>
+          <button type="button" class="btn btn-secondary" [disabled]="currentInventoryPage === operationItemsTotalPages" (click)="setCurrentInventoryPage(currentInventoryPage + 1)">next</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <button
+        *ngIf="todaysOperation && !showCloseConfirm"
+        type="button"
+        class="btn btn-danger"
+        (click)="showCloseConfirm = true">
+        🔒 Close {{ displayTitle }} Operation
+      </button>
+
+      <div *ngIf="showCloseConfirm" class="close-confirm">
+        <div class="form-group">
+          <label>Closing Notes (Optional)</label>
+          <textarea
+            [(ngModel)]="closeNotes"
+            placeholder="Optional: Add notes about this operation (e.g., 'Sold out at 3pm', 'Leftover: 50ml milk')"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Ending Cash (₱)</label>
+          <input type="number" class="input-text" [(ngModel)]="endingCash" min="0" step="0.01" placeholder="Amount of cash on hand at closing">
+          <small>Record the amount of cash on hand when closing this operation. Cash discrepancy = Ending Cash - (Starting Cash + Cash Sales).</small>
+        </div>
+
+        <div class="form-group">
+          <label>Expected Closing Cash</label>
+          <input type="text" class="input-text" [value]="'₱' + (expectedClosingCash | number:'1.2-2')" readonly>
+        </div>
+
+        <div class="form-group">
+          <label>Cash Variance</label>
+          <input type="text" class="input-text" [value]="'₱' + (closingVariancePreview | number:'1.2-2')" readonly>
+        </div>
+
+        <div class="button-group">
+          <button type="button" class="btn btn-success" (click)="closeOperation()">Confirm Close</button>
+          <button type="button" class="btn btn-secondary" (click)="showCloseConfirm = false">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="activeTab === 'pull'" class="tab-content">
+    <div *ngIf="todaysOperation" class="card add-items">
+      <h2>Add More Items to {{ displayTitle }} Operation</h2>
+      <p class="subtitle">Pull additional items from master inventory</p>
+
+      <div class="items-table">
+        <div class="table-header">
+          <div class="col-select">Select</div>
+          <div class="col-name">Item</div>
+          <div class="col-qty">Master Qty</div>
+          <div class="col-unit">Unit</div>
+          <div class="col-cost">Unit Cost</div>
+          <div class="col-input">Pull Qty</div>
+        </div>
+
+        <div *ngFor="let item of pagedMasterInventory" class="table-row">
+          <div class="col-select">
+            <input
+              type="checkbox"
+              [checked]="selectedItemsToAdd.has(item.id)"
+              (change)="toggleItemToAdd(item.id, $any($event.target).checked ? (selectedItemsToAdd.get(item.id) || 1) : 0)">
+          </div>
+          <div class="col-name">{{ item.name }}</div>
+          <div class="col-qty">{{ item.quantity }}</div>
+          <div class="col-unit">{{ item.unit }}</div>
+          <div class="col-cost">₱{{ item.unitCost | number:'1.2-2' }}</div>
+          <div class="col-input">
+            <input
+              type="number"
+              min="0"
+              max="{{ item.quantity }}"
+              class="input-qty"
+              #qtyInputAdd
+              [value]="selectedItemsToAdd.get(item.id) || ''"
+              placeholder="0"
+              (change)="toggleItemToAdd(item.id, +$any($event.target).value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="table-pager" *ngIf="masterInventory.length > pageSize">
+        <button type="button" class="btn btn-secondary" [disabled]="pullInventoryPage === 1" (click)="setPullInventoryPage(pullInventoryPage - 1)">previous</button>
+        <span>page {{ pullInventoryPage }} of {{ masterInventoryTotalPages }}</span>
+        <button type="button" class="btn btn-secondary" [disabled]="pullInventoryPage === masterInventoryTotalPages" (click)="setPullInventoryPage(pullInventoryPage + 1)">next</button>
+      </div>
+
+      <div class="action-buttons">
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="selectedItemsToAdd.size === 0"
+          (click)="addMoreItems()">
+          ✓ Add Selected Items
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="!todaysOperation" class="card no-operation">
+      <h2>No Active Operation</h2>
+      <p>Open today's {{ inventoryLabel }} operation first before adding items.</p>
+    </div>
+
+    <div *ngIf="!todaysOperation" class="card open-operation">
+      <h2>Open Today's {{ displayTitle }} Operation</h2>
+      <p class="subtitle">Select items to pull from master inventory</p>
+
+      <div class="form-group">
+        <label>Operator</label>
+        <input type="text" class="input-text" [value]="currentUserName" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>Opening Notes (Optional)</label>
+        <textarea class="input-text" [(ngModel)]="operationNotes" placeholder="E.g., 'Opening with 50 cups available' or 'Expected rush day'"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Starting Cash (₱)</label>
+        <input type="number" class="input-text" [(ngModel)]="startingCash" min="0" step="0.01" placeholder="Amount of cash on hand at opening">
+        <small>Record the amount of cash available when opening this operation for cash reconciliation.</small>
+      </div>
+
+      <div class="items-table">
+        <div class="table-header">
+          <div class="col-select">Select</div>
+          <div class="col-name">Item</div>
+          <div class="col-qty">Master Qty</div>
+          <div class="col-unit">Unit</div>
+          <div class="col-cost">Unit Cost</div>
+          <div class="col-input">Pull Qty</div>
+        </div>
+
+        <div *ngFor="let item of pagedMasterInventory" class="table-row">
+          <div class="col-select">
+            <input
+              type="checkbox"
+              [checked]="selectedItems.has(item.id)"
+              (change)="toggleItemSelection(item.id, $any($event.target).checked ? (selectedItems.get(item.id) || 1) : 0)">
+          </div>
+          <div class="col-name">{{ item.name }}</div>
+          <div class="col-qty">{{ item.quantity }}</div>
+          <div class="col-unit">{{ item.unit }}</div>
+          <div class="col-cost">₱{{ item.unitCost | number:'1.2-2' }}</div>
+          <div class="col-input">
+            <input
+              type="number"
+              min="0"
+              max="{{ item.quantity }}"
+              class="input-qty"
+              [value]="selectedItems.get(item.id) || ''"
+              placeholder="0"
+              (change)="toggleItemSelection(item.id, +$any($event.target).value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="table-pager" *ngIf="masterInventory.length > pageSize">
+        <button type="button" class="btn btn-secondary" [disabled]="pullInventoryPage === 1" (click)="setPullInventoryPage(pullInventoryPage - 1)">previous</button>
+        <span>page {{ pullInventoryPage }} of {{ masterInventoryTotalPages }}</span>
+        <button type="button" class="btn btn-secondary" [disabled]="pullInventoryPage === masterInventoryTotalPages" (click)="setPullInventoryPage(pullInventoryPage + 1)">next</button>
+      </div>
+
+      <div class="action-buttons">
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="selectedItems.size === 0"
+          (click)="openOperation()">
+          🔓 Open {{ displayTitle }} Operation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="activeTab === 'logs'" class="tab-content">
+    <div class="card logs-view">
+      <h2>{{ displayTitle }} Audit Logs</h2>
+      <p class="subtitle">All {{ inventoryLabel }} inventory transactions</p>
+
+      <div *ngIf="auditLogs.length === 0" class="empty-state">
+        <p>No transactions yet.</p>
+      </div>
+
+      <div *ngIf="auditLogs.length > 0" class="logs-table">
+        <div class="table-header">
+          <div class="col-date">Date</div>
+          <div class="col-action">Action</div>
+          <div class="col-item">Item</div>
+          <div class="col-qty">Quantity</div>
+          <div class="col-user">By</div>
+          <div class="col-note">Notes</div>
+        </div>
+
+        <div *ngFor="let log of pagedAuditLogs" class="table-row" [class]="'action-' + log.action">
+          <div class="col-date">{{ log.timestamp | date:'MMM d, h:mm a' }}</div>
+          <div class="col-action">
+            <span class="action-badge" [class]="'action-' + log.action">
+              {{ log.action | uppercase }}
+            </span>
+          </div>
+          <div class="col-item">{{ log.inventoryItemName }}</div>
+          <div class="col-qty">{{ log.quantity }} {{ log.unit }}</div>
+          <div class="col-user">{{ log.performedBy }}</div>
+          <div class="col-note">{{ log.notes }}</div>
+        </div>
+      </div>
+
+      <div class="table-pager" *ngIf="auditLogs.length > pageSize">
+        <button type="button" class="btn btn-secondary" [disabled]="logsPage === 1" (click)="setLogsPage(logsPage - 1)">previous</button>
+        <span>page {{ logsPage }} of {{ auditLogTotalPages }}</span>
+        <button type="button" class="btn btn-secondary" [disabled]="logsPage === auditLogTotalPages" (click)="setLogsPage(logsPage + 1)">next</button>
+      </div>
+    </div>
+  </div>
+</section>

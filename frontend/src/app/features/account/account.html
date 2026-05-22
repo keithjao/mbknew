@@ -1,0 +1,126 @@
+<div class="page-container account-page">
+  <section class="account-hero">
+    <p class="account-eyebrow">website account</p>
+    <h1>sign in or create your matcha by kamo account</h1>
+    <p class="account-copy">
+      keep your website account in one calm, simple place. sign in, create an account, or review the current session without leaving the public site.
+    </p>
+  </section>
+
+  <div class="account-layout">
+    <aside class="account-summary-card">
+      <ng-container *ngIf="customerSession() as session; else guestSummary">
+        <p class="account-eyebrow">signed in</p>
+        <h2>{{ session.fullName }}</h2>
+        <div class="account-meta">
+          <p>{{ session.email }}</p>
+          <p>session started {{ session.signedInAt | date:'medium' }}</p>
+        </div>
+        <button type="button" class="account-action secondary" (click)="signOutCustomer()">sign out</button>
+      </ng-container>
+
+      <ng-template #guestSummary>
+        <p class="account-eyebrow">guest</p>
+        <h2>your website account lives here now</h2>
+        <p>the old header dropdown was removed so sign in and sign up feel steady on desktop and mobile.</p>
+      </ng-template>
+
+      <div class="account-note">
+        <strong>next backend step</strong>
+        <p>forgot password and email verification stay out for now because they need a secure backend and a real email service.</p>
+      </div>
+    </aside>
+
+    <div class="account-main">
+      <section class="account-panel-card" *ngIf="!customerSession(); else signedInPanel">
+        <p class="account-panel-label">account access</p>
+        <div class="auth-switcher">
+          <button type="button" [class.active]="accountMode() === 'sign-in'" (click)="openAccountMode('sign-in')">sign in</button>
+          <button type="button" [class.active]="accountMode() === 'sign-up'" (click)="openAccountMode('sign-up')">sign up</button>
+        </div>
+
+        <form *ngIf="accountMode() === 'sign-in'; else signUpPanel" class="account-form" (submit)="signInCustomer(); $event.preventDefault()">
+          <label>
+            <span>email</span>
+            <input [(ngModel)]="signInEmail" name="signInEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+          </label>
+          <label>
+            <span>password</span>
+            <input [(ngModel)]="signInPassword" name="signInPassword" type="password" autocomplete="current-password" placeholder="enter your password" />
+          </label>
+          <button type="submit" class="account-action" [disabled]="!signInEmail.trim() || !signInPassword">sign in</button>
+        </form>
+
+        <ng-template #signUpPanel>
+          <form class="account-form" (submit)="signUpCustomer(); $event.preventDefault()">
+            <label>
+              <span>full name</span>
+              <input [(ngModel)]="signUpName" name="signUpName" type="text" autocomplete="name" placeholder="your full name" />
+            </label>
+            <label>
+              <span>email</span>
+              <input [(ngModel)]="signUpEmail" name="signUpEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+            </label>
+            <label>
+              <span>password</span>
+              <input [(ngModel)]="signUpPassword" name="signUpPassword" type="password" autocomplete="new-password" placeholder="8+ chars, upper/lower/number" />
+            </label>
+            <label>
+              <span>confirm password</span>
+              <input [(ngModel)]="signUpConfirmPassword" name="signUpConfirmPassword" type="password" autocomplete="new-password" placeholder="repeat your password" />
+            </label>
+            <button type="submit" class="account-action" [disabled]="!signUpName.trim() || !signUpEmail.trim() || !signUpPassword || !signUpConfirmPassword">create account</button>
+          </form>
+        </ng-template>
+
+        <p *ngIf="accountFeedback" class="account-feedback" [class.success]="accountFeedbackTone === 'success'" [class.error]="accountFeedbackTone === 'error'">{{ accountFeedback }}</p>
+      </section>
+
+      <ng-template #signedInPanel>
+        <section class="account-panel-card status-panel">
+          <p class="account-panel-label">account home</p>
+          <h2>welcome back, {{ currentAccount()?.fullName || customerSession()?.fullName }}</h2>
+          <p>your website account is active and ready for future order history, saved drink notes, and member-only experiences.</p>
+
+          <div class="account-home-grid">
+            <article class="account-home-block">
+              <strong>member profile</strong>
+              <p>{{ currentAccount()?.email || customerSession()?.email }}</p>
+              <p>joined {{ currentAccount()?.createdAt | date:'MMMM y' }}</p>
+            </article>
+
+            <article class="account-home-block">
+              <strong>current session</strong>
+              <p>signed in {{ customerSession()?.signedInAt | date:'medium' }}</p>
+              <p>use this space for the public website only. staff and admin tools stay separate.</p>
+            </article>
+
+            <article class="account-home-block">
+              <strong>next launch</strong>
+              <p>order history, saved favourites, and rewards activity can plug into this home state once backend data is ready.</p>
+            </article>
+          </div>
+
+          <div class="account-home-actions">
+            <button type="button" class="account-action secondary" (click)="signOutCustomer()">sign out</button>
+          </div>
+
+          <p class="account-feedback" *ngIf="accountFeedback" [class.success]="accountFeedbackTone === 'success'" [class.error]="accountFeedbackTone === 'error'">{{ accountFeedback }}</p>
+        </section>
+      </ng-template>
+
+      <section class="account-roadmap">
+        <p class="account-panel-label">backend-ready auth states</p>
+        <div class="account-state-grid">
+          <article class="account-state-card" *ngFor="let state of authRoadmap">
+            <div class="account-state-head">
+              <strong>{{ state.title }}</strong>
+              <span>{{ state.status }}</span>
+            </div>
+            <p>{{ state.description }}</p>
+          </article>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

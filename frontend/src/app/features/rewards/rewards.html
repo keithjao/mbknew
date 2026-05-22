@@ -1,0 +1,20 @@
+<div class="page-container">
+  <section class="rewards-page" aria-label="rewards program tiers">
+    <h1>rewards</h1>
+    <p class="rewards-intro">choose your tier and enjoy curated benefits as your visits grow.</p>
+
+    <div class="tiers-grid">
+      <article class="tier" *ngFor="let tier of tiers">
+        <header class="tier__header">
+          <h2 class="tier__name">{{ tier.name }}</h2>
+          <p class="tier__range">{{ tier.spendRange }}</p>
+          <p class="tier__points">{{ tier.pointsRate }}</p>
+        </header>
+
+        <ul class="tier__benefits">
+          <li *ngFor="let benefit of tier.benefits">{{ benefit }}</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+</div>
