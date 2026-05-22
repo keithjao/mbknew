@@ -335,6 +335,10 @@
               <span>Remaining:</span>
               <span class="incomplete">₱{{ getRemainingPaymentAmount().toFixed(2) }}</span>
             </div>
+            <div class="payment-total" *ngIf="getChangeAmount() > 0">
+              <span>Change:</span>
+              <span>₱{{ getChangeAmount().toFixed(2) }}</span>
+            </div>
           </div>
 
           <div class="payment-input-group">
@@ -350,7 +354,7 @@
                 #paymentAmount 
                 min="0" 
                 step="0.01"
-                placeholder="Amount"
+                placeholder="Amount (leave blank = exact)"
                 class="payment-amount-input">
               <button 
                 type="button" 
@@ -360,6 +364,7 @@
                 Add Payment
               </button>
             </div>
+            <small>Leave amount blank for exact remaining payment.</small>
           </div>
         </div>
 

@@ -33,6 +33,7 @@ export class QueueBoard implements OnInit, OnDestroy {
 
   selectedOrder: Order | null = null;
   showOrderDetail = false;
+  lastSyncedAt: string | null = null;
 
   private readonly subscription = new Subscription();
   private refreshIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -46,6 +47,12 @@ export class QueueBoard implements OnInit, OnDestroy {
       this.ordersStore.orders$.subscribe(orders => {
         this.allOrders = orders;
         this.refreshVisibleOrders();
+      })
+    );
+
+    this.subscription.add(
+      this.ordersStore.lastSyncedAt$.subscribe(value => {
+        this.lastSyncedAt = value;
       })
     );
   }

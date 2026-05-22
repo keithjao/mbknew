@@ -89,6 +89,8 @@ export class OrdersStore {
 
   private readonly orderCounterSubject = new BehaviorSubject<number>(this.loadOrderCounter());
   readonly orderCounter$ = this.orderCounterSubject.asObservable();
+  private readonly lastSyncedAtSubject = new BehaviorSubject<string | null>(null);
+  readonly lastSyncedAt$ = this.lastSyncedAtSubject.asObservable();
   private isSyncInFlight = false;
 
   constructor(
@@ -562,6 +564,11 @@ export class OrdersStore {
           this.orderCounterSubject.next(remoteCounter as number);
         });
       }
+
+      const syncedAt = new Date().toISOString();
+      this.ngZone.run(() => {
+        this.lastSyncedAtSubject.next(syncedAt);
+      });
     } finally {
       this.isSyncInFlight = false;
     }

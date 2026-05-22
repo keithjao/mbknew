@@ -351,18 +351,14 @@ export class Pos implements OnInit, OnDestroy {
       return;
     }
 
-    if (!Number.isFinite(amount) || amount <= 0) {
-      this.setFeedback('❌ Enter a valid payment amount greater than zero.', 3000);
-      return;
-    }
-
     const remaining = this.getRemainingPaymentAmount();
     if (remaining <= 0) {
       this.setFeedback('❌ Order is already fully paid.', 3000);
       return;
     }
 
-    const sanitizedAmount = Number(Math.min(amount, remaining).toFixed(2));
+    const useExactRemaining = !Number.isFinite(amount) || amount <= 0;
+    const sanitizedAmount = Number((useExactRemaining ? remaining : amount).toFixed(2));
     const existingIndex = this.paymentMethods.findIndex(split => split.method === paymentMethod);
 
     if (existingIndex >= 0) {
@@ -376,8 +372,8 @@ export class Pos implements OnInit, OnDestroy {
       this.paymentMethods = [...this.paymentMethods, { method: paymentMethod, amount: sanitizedAmount }];
     }
 
-    if (amount > remaining + 0.01) {
-      this.setFeedback(`✓ Payment capped to remaining balance ₱${remaining.toFixed(2)}.`, 3000);
+    if (useExactRemaining) {
+      this.setFeedback(`✓ Added exact remaining amount ₱${remaining.toFixed(2)}.`, 2500);
     }
   }
 
@@ -394,7 +390,11 @@ export class Pos implements OnInit, OnDestroy {
   }
 
   isPaymentComplete(): boolean {
-    return this.finalTotal > 0 && Math.abs(this.getTotalPaymentAmount() - this.finalTotal) < 0.01;
+    return this.finalTotal > 0 && this.getTotalPaymentAmount() + 0.01 >= this.finalTotal;
+  }
+
+  getChangeAmount(): number {
+    return Number(Math.max(this.getTotalPaymentAmount() - this.finalTotal, 0).toFixed(2));
   }
 
   getPaymentMethodLabel(method: PaymentMethod): string {

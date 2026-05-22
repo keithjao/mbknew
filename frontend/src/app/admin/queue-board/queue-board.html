@@ -44,6 +44,9 @@
         <span class="inventory-status" [class.open]="selectedSourceFilter === 'all'">
           Showing {{ filteredSourceLabel }}
         </span>
+        <span class="inventory-status" *ngIf="lastSyncedAt">
+          Last synced: {{ lastSyncedAt | date: 'shortTime' }}
+        </span>
         <button class="btn btn-secondary" type="button" (click)="clearResolvedOrders()" [disabled]="resolvedOrders.length === 0">
           Clear archived ({{ resolvedOrders.length }})
         </button>
